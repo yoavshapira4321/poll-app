@@ -18,7 +18,9 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, '../client')));
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/pollapp', {
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pollapp';
+
+mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -39,7 +41,7 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/index.html'));
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Open http://localhost:${PORT} in your browser`);
 });
