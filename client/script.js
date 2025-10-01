@@ -3,9 +3,11 @@ class PollApp {
         this.form = document.getElementById('pollForm');
         this.submitBtn = document.getElementById('submitBtn');
         this.messageEl = document.getElementById('message');
-        this.apiBaseUrl = window.location.origin.includes('localhost') 
+        
+        // Auto-detect API URL based on current domain
+        this.apiBaseUrl = window.location.hostname === 'localhost' 
             ? 'http://localhost:5000/api' 
-            : '/api';
+            : '/api'; // Use relative path for production
 
         this.init();
     }
@@ -38,6 +40,10 @@ class PollApp {
                     selectedOption: selectedOption
                 })
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const result = await response.json();
 

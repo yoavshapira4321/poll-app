@@ -25,16 +25,8 @@ mongoose.connect(MONGODB_URI, {
   useUnifiedTopology: true,
 });
 
-mongoose.connection.on('connected', () => {
-  console.log('Connected to MongoDB successfully');
-});
-
-mongoose.connection.on('error', (err) => {
-  console.error('MongoDB connection error:', err);
-});
-
-// Routes
-app.use('/api/poll', pollRoutes);
+// Routes - THIS IS CRITICAL
+app.use('/api/poll', pollRoutes); // This mounts routes at /api/poll
 
 // Serve client for all other routes (SPA support)
 app.get('*', (req, res) => {
@@ -43,5 +35,4 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Open http://localhost:${PORT} in your browser`);
 });

@@ -3,7 +3,7 @@ const router = express.Router();
 const PollResponse = require('../models/Poll');
 const { sendPollNotification } = require('../utils/email');
 
-// Submit poll response
+// Submit poll response - should be at /api/poll/submit
 router.post('/submit', async (req, res) => {
   try {
     const { question, selectedOption } = req.body;
@@ -53,7 +53,7 @@ router.post('/submit', async (req, res) => {
   }
 });
 
-// Get poll results (optional)
+// Get poll results - should be at /api/poll/results
 router.get('/results', async (req, res) => {
   try {
     const results = await PollResponse.aggregate([
