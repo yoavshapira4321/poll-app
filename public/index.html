@@ -17,33 +17,85 @@
         <main>
             <!-- Voting Section -->
             <div id="voting-section" class="poll-card">
-                <h2>שאלות הסקר</h2>
-                
-                <form id="poll-form">
-                    <div class="voter-info">
-                        <h3>מידע אישי (אופציונלי)</h3>
-                        <div class="input-group">
-                            <input type="text" id="voter-name" placeholder="שמך">
-                            <input type="email" id="voter-email" placeholder="אימייל">
+                <div class="voter-info">
+                    <h3>מידע אישי (אופציונלי)</h3>
+                    <div class="input-group">
+                        <input type="text" id="voter-name" placeholder="שמך">
+                        <input type="email" id="voter-email" placeholder="אימייל">
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text">שאלה 1 מתוך 21</div>
+                </div>
+
+                <!-- Single Question Display -->
+                <div id="question-container" class="question-container">
+                    <div class="question-card">
+                        <div class="question-header">
+                            <div class="category-badge" id="question-category">קטגוריה A</div>
+                            <div class="question-counter" id="question-counter">1/21</div>
+                        </div>
+                        <div class="question-text" id="question-text">
+                            <!-- Question text will be populated here -->
+                        </div>
+                        <div class="answer-options">
+                            <button class="answer-btn yes-btn" data-answer="yes" id="yes-btn">
+                                <span class="btn-icon">✅</span>
+                                כן (1)
+                            </button>
+                            <button class="answer-btn no-btn" data-answer="no" id="no-btn">
+                                <span class="btn-icon">❌</span>
+                                לא (0)
+                            </button>
                         </div>
                     </div>
+                </div>
 
-                    <div id="questions-container" class="questions-container">
-                        <!-- Questions will be populated here -->
+                <!-- Navigation -->
+                <div class="navigation-buttons">
+                    <button class="nav-btn prev-btn" id="prev-btn" disabled>
+                        <span class="btn-icon">←</span>
+                        הקודם (←)
+                    </button>
+                    <button class="nav-btn next-btn" id="next-btn">
+                        הבא (→)
+                        <span class="btn-icon">→</span>
+                    </button>
+                    <button class="nav-btn submit-btn hidden" id="submit-btn">
+                        <span class="btn-icon">📤</span>
+                        שלח תשובות (Enter)
+                    </button>
+                </div>
+
+                <!-- Keyboard Shortcuts Help -->
+                <div class="keyboard-help">
+                    <h4>קיצורי מקלדת:</h4>
+                    <div class="shortcuts">
+                        <span class="shortcut"><kbd>1</kbd> - כן</span>
+                        <span class="shortcut"><kbd>0</kbd> - לא</span>
+                        <span class="shortcut"><kbd>→</kbd> - הבא</span>
+                        <span class="shortcut"><kbd>←</kbd> - הקודם</span>
+                        <span class="shortcut"><kbd>Enter</kbd> - שלח</span>
                     </div>
-
-                    <button type="submit" class="submit-btn">שלח תשובות</button>
-                </form>
+                </div>
             </div>
 
             <!-- Results Section -->
             <div id="results-section" class="poll-card hidden">
+                <!-- ... (keep existing results section unchanged) ... -->
                 <h2>תוצאות הסקר</h2>
                 
                 <div class="results-header">
                     <h3>סיכום קטגוריות</h3>
                     <div class="total-votes-badge" id="total-votes">סה"כ תשובות: 0</div>
                 </div>
+
+                <!-- Dominant Category will be inserted here by JavaScript -->
 
                 <!-- Category Results -->
                 <div id="category-results" class="category-results">
