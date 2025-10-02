@@ -72,7 +72,7 @@ let pollResults = {
   totalVotes: 0
 };
 
-// Routes
+// API Routes - these should come BEFORE static file serving
 app.get('/api/poll', (req, res) => {
   res.json(pollResults);
 });
@@ -134,25 +134,30 @@ app.post('/api/vote', async (req, res) => {
 });
 
 // Health check endpoint (important for Railway)
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    message: 'Poll API is running successfully'
   });
 });
 
-// Root endpoint
+// Serve static files (this should come after API routes)
+app.use(express.static('public'));
+
+// Root endpoint - serve the main page
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Handle all other routes
+// Catch-all handler - serve index.html for any other route (for SPA)
 app.get('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
   console.log(`📧 Email notifications enabled for: ${process.env.EMAIL_TO}`);
+  console.log(`🌐 Health check available at: /api/health`);
 });
