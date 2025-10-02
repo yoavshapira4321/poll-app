@@ -1,4 +1,116 @@
 class PollApp {
+
+    displayResults() {
+    this.displayCategoryResults(this.currentResults.summary);
+    this.displayYourAnswers(this.userAnswers);
+    this.displayDominantCategory(this.currentResults.dominantCategory, this.currentResults.categoryDescriptions);
+    this.votingSection.classList.add('hidden');
+    this.resultsSection.classList.remove('hidden');
+    this.resultsSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+displayDominantCategory(dominantData, descriptions) {
+    // Remove existing dominant category if any
+    const existingDominant = document.getElementById('dominant-category');
+    if (existingDominant) {
+        existingDominant.remove();
+    }
+
+    const dominantSection = document.createElement('div');
+    dominantSection.id = 'dominant-category';
+    dominantSection.className = 'dominant-category';
+
+    const categories = dominantData.dominant;
+    const isTie = categories.length > 1;
+
+    let title, description, dominantClass;
+    
+    if (isTie) {
+        title = `שילוב סגנונות: ${categories.join(' + ')}`;
+        description = 'נראה שיש לך מאפיינים מכמה סגנונות התקשרות.';
+        dominantClass = 'dominant-tie';
+    } else {
+        const mainCategory = categories[0];
+        title = `סגנון התקשרות דומיננטי: ${mainCategory}`;
+        description = descriptions[mainCategory];
+        
+        switch(mainCategory) {
+            case 'A':
+                dominantClass = 'dominant-a';
+                break;
+            case 'B':
+                dominantClass = 'dominant-b';
+                break;
+            case 'C':
+                dominantClass = 'dominant-c';
+                break;
+            default:
+                dominantClass = 'dominant-tie';
+        }
+    }
+
+    dominantSection.innerHTML = `
+        <div class="dominant-header ${dominantClass}">
+            <h3>${title}</h3>
+            <div class="dominant-scores">
+                <span class="score-a">A: ${dominantData.scores.A}</span>
+                <span class="score-b">B: ${dominantData.scores.B}</span>
+                <span class="score-c">C: ${dominantData.scores.C}</span>
+            </div>
+        </div>
+        <div class="dominant-description">
+            <p>${description}</p>
+        </div>
+        ${this.getCategoryBreakdown(dominantData.scores)}
+    `;
+
+    // Insert after category results
+    this.categoryResults.parentNode.insertBefore(dominantSection, this.categoryResults.nextSibling);
+}
+
+getCategoryBreakdown(scores) {
+    const total = scores.A + scores.B + scores.C;
+    if (total === 0) return '';
+
+    const aPercent = ((scores.A / total) * 100).toFixed(1);
+    const bPercent = ((scores.B / total) * 100).toFixed(1);
+    const cPercent = ((scores.C / total) * 100).toFixed(1);
+
+    return `
+        <div class="breakdown">
+            <h4>חלוקת התשובות שלך:</h4>
+            <div class="breakdown-bars">
+                <div class="breakdown-bar">
+                    <div class="breakdown-label">סגנון A</div>
+                    <div class="breakdown-bar-container">
+                        <div class="breakdown-fill breakdown-a" style="width: ${aPercent}%">
+                            <span>${aPercent}%</span>
+                        </div>
+                    </div>
+                    <div class="breakdown-count">${scores.A} תשובות</div>
+                </div>
+                <div class="breakdown-bar">
+                    <div class="breakdown-label">סגנון B</div>
+                    <div class="breakdown-bar-container">
+                        <div class="breakdown-fill breakdown-b" style="width: ${bPercent}%">
+                            <span>${bPercent}%</span>
+                        </div>
+                    </div>
+                    <div class="breakdown-count">${scores.B} תשובות</div>
+                </div>
+                <div class="breakdown-bar">
+                    <div class="breakdown-label">סגנון C</div>
+                    <div class="breakdown-bar-container">
+                        <div class="breakdown-fill breakdown-c" style="width: ${cPercent}%">
+                            <span>${cPercent}%</span>
+                        </div>
+                    </div>
+                    <div class="breakdown-count">${scores.C} תשובות</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
     constructor() {
         this.votingSection = document.getElementById('voting-section');
         this.resultsSection = document.getElementById('results-section');
@@ -39,32 +151,34 @@ class PollApp {
     }
 
     displayQuestions() {
-        this.questionsContainer.innerHTML = '';
+    this.questionsContainer.innerHTML = '';
+    
+    this.questions.forEach(question => {
+        const questionElement = document.createElement('div');
+        questionElement.className = 'question-item';
         
-        this.questions.forEach(question => {
-            const questionElement = document.createElement('div');
-            questionElement.className = 'question-item';
-            
-            questionElement.innerHTML = `
-                <div class="question-header">
-                    <div class="question-text">${question.text}</div>
-                    <div class="category-badge">קטגוריה ${question.category}</div>
+        const badgeClass = `category-badge ${question.category.toLowerCase()}-badge`;
+        
+        questionElement.innerHTML = `
+            <div class="question-header">
+                <div class="question-text">${question.text}</div>
+                <div class="${badgeClass}">קטגוריה ${question.category}</div>
+            </div>
+            <div class="yesno-options">
+                <div class="yesno-option">
+                    <input type="radio" id="q${question.id}-yes" name="q${question.id}" value="yes" required>
+                    <label for="q${question.id}-yes" class="yesno-label">כן</label>
                 </div>
-                <div class="yesno-options">
-                    <div class="yesno-option">
-                        <input type="radio" id="q${question.id}-yes" name="q${question.id}" value="yes" required>
-                        <label for="q${question.id}-yes" class="yesno-label">כן</label>
-                    </div>
-                    <div class="yesno-option">
-                        <input type="radio" id="q${question.id}-no" name="q${question.id}" value="no" required>
-                        <label for="q${question.id}-no" class="yesno-label">לא</label>
-                    </div>
+                <div class="yesno-option">
+                    <input type="radio" id="q${question.id}-no" name="q${question.id}" value="no" required>
+                    <label for="q${question.id}-no" class="yesno-label">לא</label>
                 </div>
-            `;
-            
-            this.questionsContainer.appendChild(questionElement);
-        });
-    }
+            </div>
+        `;
+        
+        this.questionsContainer.appendChild(questionElement);
+    });
+}
 
     async handleSubmit(e) {
         e.preventDefault();
