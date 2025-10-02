@@ -47,6 +47,19 @@ class PollApp {
         this.displayCurrentQuestion();
     }
 
+    // ADD THIS MISSING METHOD
+    async loadQuestions() {
+        try {
+            const response = await fetch('/api/poll');
+            const data = await response.json();
+            this.questions = data.questions;
+        } catch (error) {
+            console.error('Error loading questions:', error);
+            // Fallback to empty questions if API fails
+            this.questions = [];
+        }
+    }
+
     setupTouchEvents() {
         if (!this.isMobile) return;
         

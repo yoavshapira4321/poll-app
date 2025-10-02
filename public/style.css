@@ -829,3 +829,121 @@ kbd {
         text-align: center;
     }
 }
+
+/* Mobile-Specific Improvements */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .poll-card {
+        padding: 20px 15px;
+        margin-bottom: 15px;
+    }
+    
+    header h1 {
+        font-size: 1.8rem;
+    }
+    
+    header p {
+        font-size: 1rem;
+    }
+    
+    /* Larger touch targets for mobile */
+    .answer-btn {
+        padding: 25px 20px;
+        font-size: 20px;
+        min-height: 80px;
+    }
+    
+    .nav-btn {
+        padding: 20px 15px;
+        font-size: 18px;
+        min-height: 60px;
+    }
+    
+    /* Question text larger on mobile */
+    .question-text {
+        font-size: 22px;
+        line-height: 1.5;
+        min-height: 150px;
+        padding: 10px 0;
+    }
+    
+    /* Progress bar more visible */
+    .progress-bar {
+        height: 12px;
+    }
+    
+    /* Keyboard help more compact */
+    .keyboard-help {
+        padding: 15px;
+    }
+    
+    .shortcuts {
+        gap: 10px;
+    }
+    
+    .shortcut {
+        font-size: 12px;
+    }
+    
+    /* Category results stacked on mobile */
+    .category-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Dominant category adjustments */
+    .dominant-header h3 {
+        font-size: 20px;
+    }
+    
+    .dominant-scores {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+/* Very small devices */
+@media (max-width: 480px) {
+    .question-text {
+        font-size: 20px;
+    }
+    
+    .answer-btn {
+        font-size: 18px;
+        padding: 20px 15px;
+        min-height: 70px;
+    }
+    
+    .nav-btn {
+        font-size: 16px;
+        padding: 18px 12px;
+    }
+    
+    header h1 {
+        font-size: 1.6rem;
+    }
+}
+
+/* Touch device detection */
+@media (hover: none) and (pointer: coarse) {
+    /* Remove hover effects that don't work well on touch */
+    .answer-btn:hover,
+    .nav-btn:hover {
+        transform: none;
+    }
+    
+    /* Add active states for touch feedback */
+    .answer-btn:active,
+    .nav-btn:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+    }
+    
+    /* Larger touch targets specifically for touch devices */
+    .answer-btn,
+    .nav-btn {
+        min-height: 44px; /* Apple's recommended minimum touch target */
+    }
+}
