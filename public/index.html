@@ -1,115 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Online Poll App</title>
+    <title>סקר יחסים - Relationship Survey</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Developer Poll</h1>
-            <p>Share your opinion and see real-time results!</p>
+            <h1>סקר יחסים - Relationship Survey</h1>
+            <p>אנא ענה על השאלות הבאות בנוגע לרגשותיך במערכות יחסים</p>
         </header>
 
         <main>
             <!-- Voting Section -->
             <div id="voting-section" class="poll-card">
-                <h2 id="poll-question">What's your favorite programming language?</h2>
+                <h2>שאלות הסקר</h2>
                 
                 <form id="poll-form">
                     <div class="voter-info">
-                        <h3>Your Information (Optional)</h3>
+                        <h3>מידע אישי (אופציונלי)</h3>
                         <div class="input-group">
-                            <input type="text" id="voter-name" placeholder="Your Name">
-                            <input type="email" id="voter-email" placeholder="Your Email">
+                            <input type="text" id="voter-name" placeholder="שמך">
+                            <input type="email" id="voter-email" placeholder="אימייל">
                         </div>
                     </div>
 
-                    <div class="options">
-                        <label class="option">
-                            <input type="radio" name="poll-option" value="JavaScript">
-                            <span class="checkmark"></span>
-                            JavaScript
-                        </label>
-                        <label class="option">
-                            <input type="radio" name="poll-option" value="Python">
-                            <span class="checkmark"></span>
-                            Python
-                        </label>
-                        <label class="option">
-                            <input type="radio" name="poll-option" value="Java">
-                            <span class="checkmark"></span>
-                            Java
-                        </label>
-                        <label class="option">
-                            <input type="radio" name="poll-option" value="C++">
-                            <span class="checkmark"></span>
-                            C++
-                        </label>
-                        <label class="option">
-                            <input type="radio" name="poll-option" value="Other">
-                            <span class="checkmark"></span>
-                            Other
-                        </label>
+                    <div id="questions-container" class="questions-container">
+                        <!-- Questions will be populated here -->
                     </div>
 
-                    <button type="submit" class="submit-btn">Submit Vote</button>
+                    <button type="submit" class="submit-btn">שלח תשובות</button>
                 </form>
             </div>
 
             <!-- Results Section -->
             <div id="results-section" class="poll-card hidden">
-                <h2>Poll Results</h2>
+                <h2>תוצאות הסקר</h2>
                 
                 <div class="results-header">
-                    <h3 id="results-question">What's your favorite programming language?</h3>
-                    <div class="total-votes-badge" id="total-votes">Total Votes: 0</div>
+                    <h3>סיכום קטגוריות</h3>
+                    <div class="total-votes-badge" id="total-votes">סה"כ תשובות: 0</div>
                 </div>
 
-                <div id="results-container" class="results-container">
-                    <!-- Results will be populated here -->
+                <!-- Category Results -->
+                <div id="category-results" class="category-results">
+                    <!-- Category results will be populated here -->
+                </div>
+
+                <!-- Your Answers -->
+                <div class="your-answers">
+                    <h3>התשובות שלך</h3>
+                    <div id="your-answers-container"></div>
                 </div>
 
                 <div class="results-actions">
                     <button id="copy-results-btn" class="action-btn copy-btn">
                         <span class="btn-icon">📋</span>
-                        Copy Results to Clipboard
+                        העתק תוצאות
                     </button>
                     <button id="share-email-btn" class="action-btn email-btn">
                         <span class="btn-icon">📧</span>
-                        Share via Email
+                        שתף באימייל
                     </button>
                     <button id="new-vote-btn" class="action-btn new-vote-btn">
                         <span class="btn-icon">🗳️</span>
-                        Submit Another Vote
+                        מלא שוב
                     </button>
                 </div>
 
                 <!-- Copy Success Message -->
                 <div id="copy-success" class="success-message hidden">
                     <span class="success-icon">✅</span>
-                    Results copied to clipboard! You can now paste them into an email.
-                </div>
-
-                <!-- Email Instructions -->
-                <div id="email-instructions" class="instructions hidden">
-                    <h4>How to share via email:</h4>
-                    <ol>
-                        <li>Open your email client (Gmail, Outlook, etc.)</li>
-                        <li>Create a new email</li>
-                        <li>Paste the results (Ctrl+V or Cmd+V)</li>
-                        <li>Add your comments and send!</li>
-                    </ol>
+                    התוצאות הועתקו! ניתן להדביק אותן באימייל.
                 </div>
             </div>
         </main>
 
         <footer>
-            <p>&copy; 2024 Online Poll App. All votes are anonymous.</p>
+            <p>© 2024 סקר יחסים. כל התשובות אנונימיות.</p>
         </footer>
     </div>
 
