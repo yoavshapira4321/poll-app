@@ -1,121 +1,8 @@
 class PollApp {
-
-    displayResults() {
-    this.displayCategoryResults(this.currentResults.summary);
-    this.displayYourAnswers(this.userAnswers);
-    this.displayDominantCategory(this.currentResults.dominantCategory, this.currentResults.categoryDescriptions);
-    this.votingSection.classList.add('hidden');
-    this.resultsSection.classList.remove('hidden');
-    this.resultsSection.scrollIntoView({ behavior: 'smooth' });
-}
-
-displayDominantCategory(dominantData, descriptions) {
-    // Remove existing dominant category if any
-    const existingDominant = document.getElementById('dominant-category');
-    if (existingDominant) {
-        existingDominant.remove();
-    }
-
-    const dominantSection = document.createElement('div');
-    dominantSection.id = 'dominant-category';
-    dominantSection.className = 'dominant-category';
-
-    const categories = dominantData.dominant;
-    const isTie = categories.length > 1;
-
-    let title, description, dominantClass;
-    
-    if (isTie) {
-        title = `שילוב סגנונות: ${categories.join(' + ')}`;
-        description = 'נראה שיש לך מאפיינים מכמה סגנונות התקשרות.';
-        dominantClass = 'dominant-tie';
-    } else {
-        const mainCategory = categories[0];
-        title = `סגנון התקשרות דומיננטי: ${mainCategory}`;
-        description = descriptions[mainCategory];
-        
-        switch(mainCategory) {
-            case 'A':
-                dominantClass = 'dominant-a';
-                break;
-            case 'B':
-                dominantClass = 'dominant-b';
-                break;
-            case 'C':
-                dominantClass = 'dominant-c';
-                break;
-            default:
-                dominantClass = 'dominant-tie';
-        }
-    }
-
-    dominantSection.innerHTML = `
-        <div class="dominant-header ${dominantClass}">
-            <h3>${title}</h3>
-            <div class="dominant-scores">
-                <span class="score-a">A: ${dominantData.scores.A}</span>
-                <span class="score-b">B: ${dominantData.scores.B}</span>
-                <span class="score-c">C: ${dominantData.scores.C}</span>
-            </div>
-        </div>
-        <div class="dominant-description">
-            <p>${description}</p>
-        </div>
-        ${this.getCategoryBreakdown(dominantData.scores)}
-    `;
-
-    // Insert after category results
-    this.categoryResults.parentNode.insertBefore(dominantSection, this.categoryResults.nextSibling);
-}
-
-getCategoryBreakdown(scores) {
-    const total = scores.A + scores.B + scores.C;
-    if (total === 0) return '';
-
-    const aPercent = ((scores.A / total) * 100).toFixed(1);
-    const bPercent = ((scores.B / total) * 100).toFixed(1);
-    const cPercent = ((scores.C / total) * 100).toFixed(1);
-
-    return `
-        <div class="breakdown">
-            <h4>חלוקת התשובות שלך:</h4>
-            <div class="breakdown-bars">
-                <div class="breakdown-bar">
-                    <div class="breakdown-label">סגנון A</div>
-                    <div class="breakdown-bar-container">
-                        <div class="breakdown-fill breakdown-a" style="width: ${aPercent}%">
-                            <span>${aPercent}%</span>
-                        </div>
-                    </div>
-                    <div class="breakdown-count">${scores.A} תשובות</div>
-                </div>
-                <div class="breakdown-bar">
-                    <div class="breakdown-label">סגנון B</div>
-                    <div class="breakdown-bar-container">
-                        <div class="breakdown-fill breakdown-b" style="width: ${bPercent}%">
-                            <span>${bPercent}%</span>
-                        </div>
-                    </div>
-                    <div class="breakdown-count">${scores.B} תשובות</div>
-                </div>
-                <div class="breakdown-bar">
-                    <div class="breakdown-label">סגנון C</div>
-                    <div class="breakdown-bar-container">
-                        <div class="breakdown-fill breakdown-c" style="width: ${cPercent}%">
-                            <span>${cPercent}%</span>
-                        </div>
-                    </div>
-                    <div class="breakdown-count">${scores.C} תשובות</div>
-                </div>
-            </div>
-        </div>
-    `;
-}
     constructor() {
         this.votingSection = document.getElementById('voting-section');
         this.resultsSection = document.getElementById('results-section');
-        this.form = document.getElementById('poll-form');
-        this.questionsContainer = document.getElementById('questions-container');
+        this.questionsContainer = document.getElementById('question-container');
         this.categoryResults = document.getElementById('category-results');
         this.yourAnswersContainer = document.getElementById('your-answers-container');
         this.totalVotesElement = document.getElementById('total-votes');
@@ -124,19 +11,30 @@ getCategoryBreakdown(scores) {
         this.newVoteBtn = document.getElementById('new-vote-btn');
         this.copySuccess = document.getElementById('copy-success');
         
+        // Single question elements
+        this.questionText = document.getElementById('question-text');
+        this.questionCategory = document.getElementById('question-category');
+        this.questionCounter = document.getElementById('question-counter');
+        this.progressFill = document.getElementById('progress-fill');
+        this.progressText = document.getElementById('progress-text');
+        this.yesBtn = document.getElementById('yes-btn');
+        this.noBtn = document.getElementById('no-btn');
+        this.prevBtn = document.getElementById('prev-btn');
+        this.nextBtn = document.getElementById('next-btn');
+        this.submitBtn = document.getElementById('submit-btn');
+        
         this.questions = [];
+        this.currentQuestionIndex = 0;
+        this.userAnswers = {};
         this.currentResults = null;
-        this.userAnswers = [];
         
         this.init();
     }
 
     async init() {
         await this.loadQuestions();
-        this.form.addEventListener('submit', (e) => this.handleSubmit(e));
-        this.copyBtn.addEventListener('click', () => this.copyResultsToClipboard());
-        this.shareEmailBtn.addEventListener('click', () => this.showEmailInstructions());
-        this.newVoteBtn.addEventListener('click', () => this.showVotingForm());
+        this.setupEventListeners();
+        this.displayCurrentQuestion();
     }
 
     async loadQuestions() {
@@ -144,74 +42,195 @@ getCategoryBreakdown(scores) {
             const response = await fetch('/api/poll');
             const data = await response.json();
             this.questions = data.questions;
-            this.displayQuestions();
         } catch (error) {
             console.error('Error loading questions:', error);
         }
     }
 
-    displayQuestions() {
-    this.questionsContainer.innerHTML = '';
-    
-    this.questions.forEach(question => {
-        const questionElement = document.createElement('div');
-        questionElement.className = 'question-item';
+    setupEventListeners() {
+        // Answer buttons
+        this.yesBtn.addEventListener('click', () => this.selectAnswer('yes'));
+        this.noBtn.addEventListener('click', () => this.selectAnswer('no'));
         
-        const badgeClass = `category-badge ${question.category.toLowerCase()}-badge`;
+        // Navigation buttons
+        this.prevBtn.addEventListener('click', () => this.previousQuestion());
+        this.nextBtn.addEventListener('click', () => this.nextQuestion());
+        this.submitBtn.addEventListener('click', () => this.submitAnswers());
         
-        questionElement.innerHTML = `
-            <div class="question-header">
-                <div class="question-text">${question.text}</div>
-                <div class="${badgeClass}">קטגוריה ${question.category}</div>
-            </div>
-            <div class="yesno-options">
-                <div class="yesno-option">
-                    <input type="radio" id="q${question.id}-yes" name="q${question.id}" value="yes" required>
-                    <label for="q${question.id}-yes" class="yesno-label">כן</label>
-                </div>
-                <div class="yesno-option">
-                    <input type="radio" id="q${question.id}-no" name="q${question.id}" value="no" required>
-                    <label for="q${question.id}-no" class="yesno-label">לא</label>
-                </div>
-            </div>
-        `;
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
         
-        this.questionsContainer.appendChild(questionElement);
-    });
-}
+        // Results buttons
+        this.copyBtn.addEventListener('click', () => this.copyResultsToClipboard());
+        this.shareEmailBtn.addEventListener('click', () => this.showEmailInstructions());
+        this.newVoteBtn.addEventListener('click', () => this.restartSurvey());
+    }
 
-    async handleSubmit(e) {
-        e.preventDefault();
+    handleKeyboard(event) {
+        // Prevent default behavior only for our keys
+        const key = event.key;
         
-        // Validate that all questions are answered
-        const unansweredQuestions = this.questions.filter(question => {
-            return !document.querySelector(`input[name="q${question.id}"]:checked`);
-        });
-        
-        if (unansweredQuestions.length > 0) {
-            alert('אנא ענה על כל השאלות לפני השליחה');
-            return;
+        switch(key) {
+            case '1':
+                event.preventDefault();
+                this.selectAnswer('yes');
+                break;
+            case '0':
+                event.preventDefault();
+                this.selectAnswer('no');
+                break;
+            case 'ArrowRight':
+                event.preventDefault();
+                this.nextQuestion();
+                break;
+            case 'ArrowLeft':
+                event.preventDefault();
+                this.previousQuestion();
+                break;
+            case 'Enter':
+                if (this.submitBtn.style.display !== 'none') {
+                    event.preventDefault();
+                    this.submitAnswers();
+                }
+                break;
         }
+    }
 
+    displayCurrentQuestion() {
+        if (this.questions.length === 0) return;
+        
+        const question = this.questions[this.currentQuestionIndex];
+        const questionNumber = this.currentQuestionIndex + 1;
+        const totalQuestions = this.questions.length;
+        
+        // Update question display
+        this.questionText.textContent = question.text;
+        this.questionCategory.textContent = `קטגוריה ${question.category}`;
+        this.questionCategory.className = `category-badge ${question.category.toLowerCase()}-badge`;
+        this.questionCounter.textContent = `${questionNumber}/${totalQuestions}`;
+        
+        // Update progress
+        const progress = (questionNumber / totalQuestions) * 100;
+        this.progressFill.style.width = `${progress}%`;
+        this.progressText.textContent = `שאלה ${questionNumber} מתוך ${totalQuestions}`;
+        
+        // Update answer buttons based on current selection
+        this.updateAnswerButtons();
+        
+        // Update navigation buttons
+        this.updateNavigationButtons();
+    }
+
+    updateAnswerButtons() {
+        const currentQuestionId = this.questions[this.currentQuestionIndex].id;
+        const currentAnswer = this.userAnswers[currentQuestionId];
+        
+        // Remove selected class from both buttons
+        this.yesBtn.classList.remove('selected');
+        this.noBtn.classList.remove('selected');
+        
+        // Add selected class to current answer
+        if (currentAnswer === 'yes') {
+            this.yesBtn.classList.add('selected');
+        } else if (currentAnswer === 'no') {
+            this.noBtn.classList.add('selected');
+        }
+    }
+
+    updateNavigationButtons() {
+        const isFirstQuestion = this.currentQuestionIndex === 0;
+        const isLastQuestion = this.currentQuestionIndex === this.questions.length - 1;
+        const currentQuestionId = this.questions[this.currentQuestionIndex].id;
+        const hasAnswer = this.userAnswers[currentQuestionId] !== undefined;
+        
+        // Previous button
+        this.prevBtn.disabled = isFirstQuestion;
+        
+        // Next/Submit button
+        if (isLastQuestion) {
+            this.nextBtn.classList.add('hidden');
+            this.submitBtn.classList.remove('hidden');
+            this.submitBtn.disabled = !hasAnswer;
+        } else {
+            this.nextBtn.classList.remove('hidden');
+            this.submitBtn.classList.add('hidden');
+            this.nextBtn.disabled = !hasAnswer;
+        }
+    }
+
+    selectAnswer(answer) {
+        const question = this.questions[this.currentQuestionIndex];
+        this.userAnswers[question.id] = answer;
+        
+        // Update button appearance
+        this.updateAnswerButtons();
+        
+        // Enable navigation
+        this.updateNavigationButtons();
+        
+        // Auto-advance to next question if not the last one
+        if (this.currentQuestionIndex < this.questions.length - 1) {
+            setTimeout(() => {
+                this.nextQuestion();
+            }, 300);
+        }
+    }
+
+    nextQuestion() {
+        const currentQuestionId = this.questions[this.currentQuestionIndex].id;
+        
+        // Only proceed if current question is answered
+        if (this.userAnswers[currentQuestionId] !== undefined) {
+            this.currentQuestionIndex++;
+            this.displayCurrentQuestion();
+            
+            // Focus on the question for keyboard navigation
+            this.yesBtn.focus();
+        }
+    }
+
+    previousQuestion() {
+        if (this.currentQuestionIndex > 0) {
+            this.currentQuestionIndex--;
+            this.displayCurrentQuestion();
+            
+            // Focus on the question for keyboard navigation
+            this.yesBtn.focus();
+        }
+    }
+
+    async submitAnswers() {
         const userInfo = {
             name: document.getElementById('voter-name').value,
             email: document.getElementById('voter-email').value
         };
 
-        // Collect answers
-        const answers = this.questions.map(question => {
-            const selectedValue = document.querySelector(`input[name="q${question.id}"]:checked`).value;
-            return {
-                questionId: question.id,
-                questionText: question.text,
-                category: question.category,
-                answer: selectedValue
-            };
-        });
+        // Validate all questions are answered
+        const unansweredQuestions = this.questions.filter(question => 
+            this.userAnswers[question.id] === undefined
+        );
 
-        const submitBtn = this.form.querySelector('.submit-btn');
-        submitBtn.textContent = 'שולח...';
-        submitBtn.disabled = true;
+        if (unansweredQuestions.length > 0) {
+            alert('אנא ענה על כל השאלות לפני השליחה');
+            // Go to first unanswered question
+            const firstUnanswered = this.questions.findIndex(question => 
+                this.userAnswers[question.id] === undefined
+            );
+            this.currentQuestionIndex = firstUnanswered;
+            this.displayCurrentQuestion();
+            return;
+        }
+
+        // Prepare answers for submission
+        const answers = this.questions.map(question => ({
+            questionId: question.id,
+            questionText: question.text,
+            category: question.category,
+            answer: this.userAnswers[question.id]
+        }));
+
+        this.submitBtn.disabled = true;
+        this.submitBtn.innerHTML = '<span class="btn-icon">⏳</span> שולח...';
 
         try {
             const response = await fetch('/api/vote', {
@@ -238,24 +257,29 @@ getCategoryBreakdown(scores) {
             console.error('Error:', error);
             alert('שגיאה בשליחת התשובות. אנא נסה שוב.');
         } finally {
-            submitBtn.textContent = 'שלח תשובות';
-            submitBtn.disabled = false;
+            this.submitBtn.disabled = false;
+            this.submitBtn.innerHTML = '<span class="btn-icon">📤</span> שלח תשובות (Enter)';
         }
     }
 
     showResults() {
         this.displayCategoryResults(this.currentResults.summary);
         this.displayYourAnswers(this.userAnswers);
+        this.displayDominantCategory(this.currentResults.dominantCategory, this.currentResults.categoryDescriptions);
         this.votingSection.classList.add('hidden');
         this.resultsSection.classList.remove('hidden');
         this.resultsSection.scrollIntoView({ behavior: 'smooth' });
     }
 
-    showVotingForm() {
+    restartSurvey() {
+        this.currentQuestionIndex = 0;
+        this.userAnswers = {};
         this.resultsSection.classList.add('hidden');
         this.votingSection.classList.remove('hidden');
         this.copySuccess.classList.add('hidden');
-        this.form.reset();
+        document.getElementById('voter-name').value = '';
+        document.getElementById('voter-email').value = '';
+        this.displayCurrentQuestion();
         this.votingSection.scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -312,6 +336,107 @@ getCategoryBreakdown(scores) {
             
             this.yourAnswersContainer.appendChild(answerElement);
         });
+    }
+
+    displayDominantCategory(dominantData, descriptions) {
+        const existingDominant = document.getElementById('dominant-category');
+        if (existingDominant) {
+            existingDominant.remove();
+        }
+
+        const dominantSection = document.createElement('div');
+        dominantSection.id = 'dominant-category';
+        dominantSection.className = 'dominant-category';
+
+        const categories = dominantData.dominant;
+        const isTie = categories.length > 1;
+
+        let title, description, dominantClass;
+        
+        if (isTie) {
+            title = `שילוב סגנונות: ${categories.join(' + ')}`;
+            description = 'נראה שיש לך מאפיינים מכמה סגנונות התקשרות.';
+            dominantClass = 'dominant-tie';
+        } else {
+            const mainCategory = categories[0];
+            title = `סגנון התקשרות דומיננטי: ${mainCategory}`;
+            description = descriptions[mainCategory];
+            
+            switch(mainCategory) {
+                case 'A':
+                    dominantClass = 'dominant-a';
+                    break;
+                case 'B':
+                    dominantClass = 'dominant-b';
+                    break;
+                case 'C':
+                    dominantClass = 'dominant-c';
+                    break;
+                default:
+                    dominantClass = 'dominant-tie';
+            }
+        }
+
+        dominantSection.innerHTML = `
+            <div class="dominant-header ${dominantClass}">
+                <h3>${title}</h3>
+                <div class="dominant-scores">
+                    <span class="score-a">A: ${dominantData.scores.A}</span>
+                    <span class="score-b">B: ${dominantData.scores.B}</span>
+                    <span class="score-c">C: ${dominantData.scores.C}</span>
+                </div>
+            </div>
+            <div class="dominant-description">
+                <p>${description}</p>
+            </div>
+            ${this.getCategoryBreakdown(dominantData.scores)}
+        `;
+
+        this.categoryResults.parentNode.insertBefore(dominantSection, this.categoryResults);
+    }
+
+    getCategoryBreakdown(scores) {
+        const total = scores.A + scores.B + scores.C;
+        if (total === 0) return '';
+
+        const aPercent = ((scores.A / total) * 100).toFixed(1);
+        const bPercent = ((scores.B / total) * 100).toFixed(1);
+        const cPercent = ((scores.C / total) * 100).toFixed(1);
+
+        return `
+            <div class="breakdown">
+                <h4>חלוקת התשובות שלך:</h4>
+                <div class="breakdown-bars">
+                    <div class="breakdown-bar">
+                        <div class="breakdown-label">סגנון A</div>
+                        <div class="breakdown-bar-container">
+                            <div class="breakdown-fill breakdown-a" style="width: ${aPercent}%">
+                                <span>${aPercent}%</span>
+                            </div>
+                        </div>
+                        <div class="breakdown-count">${scores.A} תשובות</div>
+                    </div>
+                    <div class="breakdown-bar">
+                        <div class="breakdown-label">סגנון B</div>
+                        <div class="breakdown-bar-container">
+                            <div class="breakdown-fill breakdown-b" style="width: ${bPercent}%">
+                                <span>${bPercent}%</span>
+                            </div>
+                        </div>
+                        <div class="breakdown-count">${scores.B} תשובות</div>
+                    </div>
+                    <div class="breakdown-bar">
+                        <div class="breakdown-label">סגנון C</div>
+                        <div class="breakdown-bar-container">
+                            <div class="breakdown-fill breakdown-c" style="width: ${cPercent}%">
+                                <span>${cPercent}%</span>
+                            </div>
+                        </div>
+                        <div class="breakdown-count">${scores.C} תשובות</div>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     async copyResultsToClipboard() {
