@@ -235,19 +235,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // API Routes
 
-app.get('/content.json', async (req, res) => {
-    try {
-        const contentPath = path.join(__dirname, 'content.json');
-        const contentData = await fs.readFile(contentPath, 'utf8');
-        res.setHeader('Content-Type', 'application/json');
-        res.send(contentData);
-    } catch (error) {
-        console.error('Error serving content.json:', error);
-        res.status(404).json({ error: 'Content file not found' });
-    }
-});
-
-
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
