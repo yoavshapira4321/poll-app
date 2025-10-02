@@ -52,7 +52,6 @@ class PollApp {
         }
     }
 
-    // CRITICAL: This method was missing - adding it now
     async loadQuestions() {
         try {
             console.log('Loading questions from API...');
@@ -71,9 +70,8 @@ class PollApp {
             }
         } catch (error) {
             console.error('Error loading questions:', error);
-            // Fallback to empty array if API fails
             this.questions = [];
-            throw error; // Re-throw to be handled by init
+            throw error;
         }
     }
 
@@ -107,33 +105,26 @@ class PollApp {
     }
 
     setupEventListeners() {
-        // Answer buttons
         this.yesBtn?.addEventListener('click', () => this.selectAnswer('yes'));
         this.noBtn?.addEventListener('click', () => this.selectAnswer('no'));
-        
-        // Navigation buttons
         this.prevBtn?.addEventListener('click', () => this.previousQuestion());
         this.nextBtn?.addEventListener('click', () => this.nextQuestion());
         this.submitBtn?.addEventListener('click', () => this.submitAnswers());
         
-        // Keyboard navigation (only for desktop)
         if (!this.isMobile) {
             document.addEventListener('keydown', (e) => this.handleKeyboard(e));
         }
         
-        // Results buttons
         this.copyBtn?.addEventListener('click', () => this.copyResultsToClipboard());
         this.shareEmailBtn?.addEventListener('click', () => this.showEmailInstructions());
         this.newVoteBtn?.addEventListener('click', () => this.restartSurvey());
         
-        // Handle orientation changes
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
                 this.handleResize();
             }, 300);
         });
         
-        // Handle window resize
         window.addEventListener('resize', () => {
             this.handleResize();
         });
@@ -176,7 +167,6 @@ class PollApp {
 
     provideHapticFeedback() {
         if (!this.isMobile) return;
-        
         if (navigator.vibrate) {
             navigator.vibrate(50);
         }
@@ -192,24 +182,17 @@ class PollApp {
         const questionNumber = this.currentQuestionIndex + 1;
         const totalQuestions = this.questions.length;
         
-        // Update question display
         this.questionText.textContent = question.text;
         this.questionCategory.textContent = `קטגוריה ${question.category}`;
         this.questionCategory.className = `category-badge ${question.category.toLowerCase()}-badge`;
         this.questionCounter.textContent = `${questionNumber}/${totalQuestions}`;
         
-        // Update progress
         const progress = (questionNumber / totalQuestions) * 100;
         this.progressFill.style.width = `${progress}%`;
         this.progressText.textContent = `שאלה ${questionNumber} מתוך ${totalQuestions}`;
         
-        // Update mobile-specific UI
         this.updateMobileUI();
-        
-        // Update answer buttons based on current selection
         this.updateAnswerButtons();
-        
-        // Update navigation buttons
         this.updateNavigationButtons();
     }
 
@@ -252,12 +235,10 @@ class PollApp {
         const currentQuestionId = this.questions[this.currentQuestionIndex].id;
         const hasAnswer = this.userAnswers[currentQuestionId] !== undefined;
         
-        // Previous button
         if (this.prevBtn) {
             this.prevBtn.disabled = isFirstQuestion;
         }
         
-        // Next/Submit button
         if (isLastQuestion) {
             this.nextBtn?.classList.add('hidden');
             this.submitBtn?.classList.remove('hidden');
@@ -283,7 +264,6 @@ class PollApp {
         this.updateAnswerButtons();
         this.updateNavigationButtons();
         
-        // Auto-advance to next question if not the last one
         if (this.currentQuestionIndex < this.questions.length - 1) {
             setTimeout(() => {
                 this.nextQuestion();
@@ -325,7 +305,6 @@ class PollApp {
             email: document.getElementById('voter-email')?.value || ''
         };
 
-        // Validate all questions are answered
         const unansweredQuestions = this.questions.filter(question => 
             this.userAnswers[question.id] === undefined
         );
@@ -340,7 +319,6 @@ class PollApp {
             return;
         }
 
-        // Prepare answers for submission
         const answers = this.questions.map(question => ({
             questionId: question.id,
             questionText: question.text,
@@ -475,78 +453,73 @@ class PollApp {
     }
 
     displayDominantCategory(dominantData, descriptions) {
-    const existingDominant = document.getElementById('dominant-category');
-    if (existingDominant) {
-        existingDominant.remove();
-    }
-
-    const dominantSection = document.createElement('div');
-    dominantSection.id = 'dominant-category';
-    dominantSection.className = 'dominant-category';
-
-    // Determine which message to show based on dominant categories
-    const categories = dominantData.dominant;
-    let messageConfig;
-    
-    if (categories.length === 1) {
-        // Single dominant category
-        messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === categories[0]);
-    } else if (categories.length === 2) {
-        // Two-way tie
-        const tieId = categories.sort().join(''); // Sort to get consistent order (AB, AC, BC)
-        messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === tieId);
-    } else {
-        // Three-way tie
-        messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === 'ABC');
-    }
-    
-    // Fallback if no specific message found
-    if (!messageConfig) {
-        messageConfig = {
-            title: `סגנון התקשרות דומיננטי: ${categories.join(' + ')}`,
-            message: descriptions[categories[0]] || 'לא נמצאה הגדרה ספציפית לסגנון ההתקשרות שלך.'
-        };
-    }
-
-    const dominantClass = this.getDominantClass(categories);
-
-    dominantSection.innerHTML = `
-        <div class="dominant-header ${dominantClass}">
-            <h3>${messageConfig.title}</h3>
-            <div class="dominant-scores">
-                <span class="score-a">A: ${dominantData.scores.A}</span>
-                <span class="score-b">B: ${dominantData.scores.B}</span>
-                <span class="score-c">C: ${dominantData.scores.C}</span>
-            </div>
-        </div>
-        <div class="dominant-description">
-            <div class="message-header">
-                <span class="style-badge">סגנון: ${messageConfig.style}</span>
-            </div>
-            <p class="personal-message">${messageConfig.message}</p>
-        </div>
-        ${this.getCategoryBreakdown(dominantData.scores)}
-    `;
-
-    if (this.categoryResults && this.categoryResults.parentNode) {
-        this.categoryResults.parentNode.insertBefore(dominantSection, this.categoryResults);
-    }
-}
-
-getDominantClass(categories) {
-    if (categories.length === 1) {
-        switch(categories[0]) {
-            case 'A': return 'dominant-a';
-            case 'B': return 'dominant-b';
-            case 'C': return 'dominant-c';
+        const existingDominant = document.getElementById('dominant-category');
+        if (existingDominant) {
+            existingDominant.remove();
         }
-    } else if (categories.length === 2) {
-        if (categories.includes('A') && categories.includes('B')) return 'dominant-ab';
-        if (categories.includes('A') && categories.includes('C')) return 'dominant-ac';
-        if (categories.includes('B') && categories.includes('C')) return 'dominant-bc';
+
+        const dominantSection = document.createElement('div');
+        dominantSection.id = 'dominant-category';
+        dominantSection.className = 'dominant-category';
+
+        const categories = dominantData.dominant;
+        let messageConfig;
+        
+        if (categories.length === 1) {
+            messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === categories[0]);
+        } else if (categories.length === 2) {
+            const tieId = categories.sort().join('');
+            messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === tieId);
+        } else {
+            messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === 'ABC');
+        }
+        
+        if (!messageConfig) {
+            messageConfig = {
+                title: `סגנון התקשרות דומיננטי: ${categories.join(' + ')}`,
+                message: descriptions[categories[0]] || 'לא נמצאה הגדרה ספציפית לסגנון ההתקשרות שלך.'
+            };
+        }
+
+        const dominantClass = this.getDominantClass(categories);
+
+        dominantSection.innerHTML = `
+            <div class="dominant-header ${dominantClass}">
+                <h3>${messageConfig.title}</h3>
+                <div class="dominant-scores">
+                    <span class="score-a">A: ${dominantData.scores.A}</span>
+                    <span class="score-b">B: ${dominantData.scores.B}</span>
+                    <span class="score-c">C: ${dominantData.scores.C}</span>
+                </div>
+            </div>
+            <div class="dominant-description">
+                <div class="message-header">
+                    <span class="style-badge">סגנון: ${messageConfig.style}</span>
+                </div>
+                <p class="personal-message">${messageConfig.message}</p>
+            </div>
+            ${this.getCategoryBreakdown(dominantData.scores)}
+        `;
+
+        if (this.categoryResults && this.categoryResults.parentNode) {
+            this.categoryResults.parentNode.insertBefore(dominantSection, this.categoryResults);
+        }
     }
-    return 'dominant-abc';
-}
+
+    getDominantClass(categories) {
+        if (categories.length === 1) {
+            switch(categories[0]) {
+                case 'A': return 'dominant-a';
+                case 'B': return 'dominant-b';
+                case 'C': return 'dominant-c';
+            }
+        } else if (categories.length === 2) {
+            if (categories.includes('A') && categories.includes('B')) return 'dominant-ab';
+            if (categories.includes('A') && categories.includes('C')) return 'dominant-ac';
+            if (categories.includes('B') && categories.includes('C')) return 'dominant-bc';
+        }
+        return 'dominant-abc';
+    }
 
     getCategoryBreakdown(scores) {
         const total = scores.A + scores.B + scores.C;
@@ -646,10 +619,55 @@ getDominantClass(categories) {
 
     showError(message) {
         console.error('App Error:', message);
-        // You could show a user-friendly error message here
         alert(message);
     }
 }
+
+// Complete Category messages configuration
+const CATEGORY_MESSAGES = [
+  {
+    "id": "A",
+    "style": "חרד",
+    "title": "A דומיננטי – חרד",
+    "message": "נראה שסגנון ההתקשרות החרד בולט אצלך. אתה נוטה להשקיע הרבה רגש במערכות יחסים ולעיתים קרובות חושש לאבד את הקרבה עם בן/בת הזוג. הרגישות שלך יכולה לסייע לך לקלוט שינויים במצב הרוח של האחר, אך לעיתים היא מובילה לדאגות מיותרות. עבודה על ביטחון עצמי ובניית אמון הדדי תסייע לך להרגיש רגוע ויציב יותר במערכות יחסים."
+  },
+  {
+    "id": "B",
+    "style": "בטוח",
+    "title": "B דומיננטי – בטוח",
+    "message": "סגנון ההתקשרות הבטוח דומיננטי אצלך. יש לך יכולת טבעית ליצור קרבה וחום במערכות יחסים, ואתה נוטה לשמור על איזון רגשי גם במצבי לחץ. אתה מסוגל לבטא את רגשותיך ולתמוך בבן/בת הזוג בפתיחות. זהו בסיס מצוין להמשך קשרים בריאים ומספקים."
+  },
+  {
+    "id": "C",
+    "style": "נמנע",
+    "title": "C דומיננטי – נמנע",
+    "message": "נראה שסגנון ההתקשרות הנמנע דומיננטי אצלך. אתה מעריך מאוד את העצמאות שלך ולעיתים מתקשה להרגיש בנוח עם קרבה רגשית עמוקה. ייתכן שאתה שומר מרחק כדי להגן על עצמך, אך זה עלול להקשות על חוויית אינטימיות במערכת היחסים. למידה לשתף יותר את עולמך הפנימי יכולה להעשיר את מערכות היחסים שלך."
+  },
+  {
+    "id": "AB",
+    "style": "חרד-בטוח",
+    "title": "A–B דומיננטיים – חרד ובטוח (תיקו)",
+    "message": "יש לך שילוב בין מאפייני סגנון חרד לסגנון בטוח. אתה מעריך קרבה רגשית ומודע לצרכים שלך ושל האחרים, אך לעיתים עולה חשש או חוסר ביטחון בנוגע ליציבות הקשר. טיפוח הביטחון העצמי ושמירה על תקשורת פתוחה יכולים לעזור לך להטות את הכף לכיוון סגנון בטוח יותר."
+  },
+  {
+    "id": "AC",
+    "style": "חרד-נמנע",
+    "title": "A–C דומיננטיים – חרד ונמנע (תיקו)",
+    "message": "אצלך מופיעים גם מאפיינים חרדתיים וגם מאפיינים נמנעים – שילוב שיכול ליצור מתח פנימי בין הרצון בקרבה לצורך לשמור מרחק. לעיתים אתה עשוי לחוות בלבול במערכות יחסים ולשלוח מסרים מעורבים. מודעות לדפוס זה ועבודה על ויסות רגשי ותקשורת ברורה עם בן/בת הזוג יכולים להביא לשיפור בתחושת הביטחון בקשר."
+  },
+  {
+    "id": "BC",
+    "style": "בטוח-נמנע",
+    "title": "B–C דומיננטיים – בטוח ונמנע (תיקו)",
+    "message": "נראה שאתה מאזן בין הצורך בעצמאות ובקרבה. לרוב אתה מרגיש בטוח בקשרים אך לעיתים יש נטייה לשמור על גבולות ברורים מדי ולצמצם אינטימיות. טיפוח נכונות לשתף רגשות ולשמור על גמישות רגשית יחזק את האמון ואת הקרבה עם בן/בת הזוג."
+  },
+  {
+    "id": "ABC",
+    "style": "מעורב",
+    "title": "A–B–C מאוזנים – תיקו משולש",
+    "message": "אין סגנון התקשרות אחד שמוביל בבירור אצלך – אתה מגלה חלקים חרדתיים, בטוחים ונמנעים במינונים דומים. המשמעות היא שהתגובות שלך במערכות יחסים עשויות להשתנות לפי נסיבות, בן/בת הזוג והקשר הספציפי. פיתוח מודעות עצמית ועקביות בתקשורת ובגבולות יכול לסייע לך לבחור את ההתנהלות שמקדמת מערכות יחסים יציבות ובריאות."
+  }
+];
 
 // Add CSS for mobile-specific layout
 const mobileStyles = `
