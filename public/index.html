@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Poll App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Developer Poll</h1>
+            <p>Share your opinion and get instant results!</p>
+        </header>
+
+        <main>
+            <div class="poll-card">
+                <h2 id="poll-question">What's your favorite programming language?</h2>
+                
+                <form id="poll-form">
+                    <div class="voter-info">
+                        <h3>Your Information (Optional)</h3>
+                        <div class="input-group">
+                            <input type="text" id="voter-name" placeholder="Your Name">
+                            <input type="email" id="voter-email" placeholder="Your Email">
+                        </div>
+                    </div>
+
+                    <div class="options">
+                        <label class="option">
+                            <input type="radio" name="poll-option" value="JavaScript">
+                            <span class="checkmark"></span>
+                            JavaScript
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="poll-option" value="Python">
+                            <span class="checkmark"></span>
+                            Python
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="poll-option" value="Java">
+                            <span class="checkmark"></span>
+                            Java
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="poll-option" value="C++">
+                            <span class="checkmark"></span>
+                            C++
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="poll-option" value="Other">
+                            <span class="checkmark"></span>
+                            Other
+                        </label>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Submit Vote</button>
+                </form>
+
+                <div id="results" class="results hidden">
+                    <h3>Current Results</h3>
+                    <div id="results-container"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 Online Poll App. All votes are anonymous.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
