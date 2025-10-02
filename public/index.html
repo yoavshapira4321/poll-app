@@ -5,16 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Poll App</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
 </head>
 <body>
     <div class="container">
         <header>
             <h1>Developer Poll</h1>
-            <p>Share your opinion and get instant results!</p>
+            <p>Share your opinion and see real-time results!</p>
         </header>
 
         <main>
-            <div class="poll-card">
+            <!-- Voting Section -->
+            <div id="voting-section" class="poll-card">
                 <h2 id="poll-question">What's your favorite programming language?</h2>
                 
                 <form id="poll-form">
@@ -56,10 +59,51 @@
 
                     <button type="submit" class="submit-btn">Submit Vote</button>
                 </form>
+            </div>
 
-                <div id="results" class="results hidden">
-                    <h3>Current Results</h3>
-                    <div id="results-container"></div>
+            <!-- Results Section -->
+            <div id="results-section" class="poll-card hidden">
+                <h2>Poll Results</h2>
+                
+                <div class="results-header">
+                    <h3 id="results-question">What's your favorite programming language?</h3>
+                    <div class="total-votes-badge" id="total-votes">Total Votes: 0</div>
+                </div>
+
+                <div id="results-container" class="results-container">
+                    <!-- Results will be populated here -->
+                </div>
+
+                <div class="results-actions">
+                    <button id="copy-results-btn" class="action-btn copy-btn">
+                        <span class="btn-icon">📋</span>
+                        Copy Results to Clipboard
+                    </button>
+                    <button id="share-email-btn" class="action-btn email-btn">
+                        <span class="btn-icon">📧</span>
+                        Share via Email
+                    </button>
+                    <button id="new-vote-btn" class="action-btn new-vote-btn">
+                        <span class="btn-icon">🗳️</span>
+                        Submit Another Vote
+                    </button>
+                </div>
+
+                <!-- Copy Success Message -->
+                <div id="copy-success" class="success-message hidden">
+                    <span class="success-icon">✅</span>
+                    Results copied to clipboard! You can now paste them into an email.
+                </div>
+
+                <!-- Email Instructions -->
+                <div id="email-instructions" class="instructions hidden">
+                    <h4>How to share via email:</h4>
+                    <ol>
+                        <li>Open your email client (Gmail, Outlook, etc.)</li>
+                        <li>Create a new email</li>
+                        <li>Paste the results (Ctrl+V or Cmd+V)</li>
+                        <li>Add your comments and send!</li>
+                    </ol>
                 </div>
             </div>
         </main>
