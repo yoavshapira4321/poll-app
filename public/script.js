@@ -41,22 +41,39 @@ class PollApp {
     }
 
     async init() {
-        await this.loadQuestions();
-        this.setupEventListeners();
-        this.setupTouchEvents();
-        this.displayCurrentQuestion();
+        try {
+            await this.loadQuestions();
+            this.setupEventListeners();
+            this.setupTouchEvents();
+            this.displayCurrentQuestion();
+        } catch (error) {
+            console.error('Error initializing app:', error);
+            this.showError('Failed to load questions. Please refresh the page.');
+        }
     }
 
-    // ADD THIS MISSING METHOD
+    // CRITICAL: This method was missing - adding it now
     async loadQuestions() {
         try {
+            console.log('Loading questions from API...');
             const response = await fetch('/api/poll');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
-            this.questions = data.questions;
+            console.log('Questions loaded:', data.questions?.length || 0);
+            this.questions = data.questions || [];
+            
+            if (this.questions.length === 0) {
+                console.warn('No questions received from API');
+            }
         } catch (error) {
             console.error('Error loading questions:', error);
-            // Fallback to empty questions if API fails
+            // Fallback to empty array if API fails
             this.questions = [];
+            throw error; // Re-throw to be handled by init
         }
     }
 
@@ -64,6 +81,7 @@ class PollApp {
         if (!this.isMobile) return;
         
         const questionCard = document.querySelector('.question-card');
+        if (!questionCard) return;
         
         questionCard.addEventListener('touchstart', (e) => {
             this.touchStartX = e.changedTouches[0].screenX;
@@ -76,29 +94,27 @@ class PollApp {
     }
 
     handleSwipe() {
-        const swipeThreshold = 50; // minimum swipe distance in pixels
+        const swipeThreshold = 50;
         const swipeDistance = this.touchEndX - this.touchStartX;
         
         if (Math.abs(swipeDistance) < swipeThreshold) return;
         
         if (swipeDistance > 0) {
-            // Swipe right - previous question
             this.previousQuestion();
         } else {
-            // Swipe left - next question
             this.nextQuestion();
         }
     }
 
     setupEventListeners() {
         // Answer buttons
-        this.yesBtn.addEventListener('click', () => this.selectAnswer('yes'));
-        this.noBtn.addEventListener('click', () => this.selectAnswer('no'));
+        this.yesBtn?.addEventListener('click', () => this.selectAnswer('yes'));
+        this.noBtn?.addEventListener('click', () => this.selectAnswer('no'));
         
         // Navigation buttons
-        this.prevBtn.addEventListener('click', () => this.previousQuestion());
-        this.nextBtn.addEventListener('click', () => this.nextQuestion());
-        this.submitBtn.addEventListener('click', () => this.submitAnswers());
+        this.prevBtn?.addEventListener('click', () => this.previousQuestion());
+        this.nextBtn?.addEventListener('click', () => this.nextQuestion());
+        this.submitBtn?.addEventListener('click', () => this.submitAnswers());
         
         // Keyboard navigation (only for desktop)
         if (!this.isMobile) {
@@ -106,9 +122,9 @@ class PollApp {
         }
         
         // Results buttons
-        this.copyBtn.addEventListener('click', () => this.copyResultsToClipboard());
-        this.shareEmailBtn.addEventListener('click', () => this.showEmailInstructions());
-        this.newVoteBtn.addEventListener('click', () => this.restartSurvey());
+        this.copyBtn?.addEventListener('click', () => this.copyResultsToClipboard());
+        this.shareEmailBtn?.addEventListener('click', () => this.showEmailInstructions());
+        this.newVoteBtn?.addEventListener('click', () => this.restartSurvey());
         
         // Handle orientation changes
         window.addEventListener('orientationchange', () => {
@@ -124,16 +140,12 @@ class PollApp {
     }
 
     handleResize() {
-        // Update mobile detection on resize
         this.isMobile = this.detectMobile();
-        
-        // Add visual feedback for orientation changes
         document.body.classList.toggle('mobile-layout', this.isMobile);
         this.updateMobileUI();
     }
 
     handleKeyboard(event) {
-        // Prevent default behavior only for our keys
         const key = event.key;
         
         switch(key) {
@@ -154,7 +166,7 @@ class PollApp {
                 this.previousQuestion();
                 break;
             case 'Enter':
-                if (!this.submitBtn.classList.contains('hidden')) {
+                if (this.submitBtn && !this.submitBtn.classList.contains('hidden')) {
                     event.preventDefault();
                     this.submitAnswers();
                 }
@@ -165,15 +177,16 @@ class PollApp {
     provideHapticFeedback() {
         if (!this.isMobile) return;
         
-        // Check if vibration API is available
         if (navigator.vibrate) {
-            // Short vibration for feedback
             navigator.vibrate(50);
         }
     }
 
     displayCurrentQuestion() {
-        if (this.questions.length === 0) return;
+        if (!this.questions || this.questions.length === 0) {
+            this.showError('No questions available. Please try refreshing the page.');
+            return;
+        }
         
         const question = this.questions[this.currentQuestionIndex];
         const questionNumber = this.currentQuestionIndex + 1;
@@ -201,7 +214,6 @@ class PollApp {
     }
 
     updateMobileUI() {
-        // Show/hide mobile-specific elements
         const desktopShortcuts = document.querySelectorAll('.desktop-only');
         const mobileShortcuts = document.querySelectorAll('.mobile-only');
         
@@ -213,58 +225,62 @@ class PollApp {
             el.style.display = this.isMobile ? 'flex' : 'none';
         });
         
-        // Add mobile-specific classes
         document.body.classList.toggle('mobile-mode', this.isMobile);
     }
 
     updateAnswerButtons() {
+        if (!this.questions || this.questions.length === 0) return;
+        
         const currentQuestionId = this.questions[this.currentQuestionIndex].id;
         const currentAnswer = this.userAnswers[currentQuestionId];
         
-        // Remove selected class from both buttons
-        this.yesBtn.classList.remove('selected');
-        this.noBtn.classList.remove('selected');
+        this.yesBtn?.classList.remove('selected');
+        this.noBtn?.classList.remove('selected');
         
-        // Add selected class to current answer
         if (currentAnswer === 'yes') {
-            this.yesBtn.classList.add('selected');
+            this.yesBtn?.classList.add('selected');
         } else if (currentAnswer === 'no') {
-            this.noBtn.classList.add('selected');
+            this.noBtn?.classList.add('selected');
         }
     }
 
     updateNavigationButtons() {
+        if (!this.questions || this.questions.length === 0) return;
+        
         const isFirstQuestion = this.currentQuestionIndex === 0;
         const isLastQuestion = this.currentQuestionIndex === this.questions.length - 1;
         const currentQuestionId = this.questions[this.currentQuestionIndex].id;
         const hasAnswer = this.userAnswers[currentQuestionId] !== undefined;
         
         // Previous button
-        this.prevBtn.disabled = isFirstQuestion;
+        if (this.prevBtn) {
+            this.prevBtn.disabled = isFirstQuestion;
+        }
         
         // Next/Submit button
         if (isLastQuestion) {
-            this.nextBtn.classList.add('hidden');
-            this.submitBtn.classList.remove('hidden');
-            this.submitBtn.disabled = !hasAnswer;
+            this.nextBtn?.classList.add('hidden');
+            this.submitBtn?.classList.remove('hidden');
+            if (this.submitBtn) {
+                this.submitBtn.disabled = !hasAnswer;
+            }
         } else {
-            this.nextBtn.classList.remove('hidden');
-            this.submitBtn.classList.add('hidden');
-            this.nextBtn.disabled = !hasAnswer;
+            this.nextBtn?.classList.remove('hidden');
+            this.submitBtn?.classList.add('hidden');
+            if (this.nextBtn) {
+                this.nextBtn.disabled = !hasAnswer;
+            }
         }
     }
 
     selectAnswer(answer) {
+        if (!this.questions || this.questions.length === 0) return;
+        
         const question = this.questions[this.currentQuestionIndex];
         this.userAnswers[question.id] = answer;
         
-        // Provide haptic feedback on mobile
         this.provideHapticFeedback();
-        
-        // Update button appearance
         this.updateAnswerButtons();
-        
-        // Enable navigation
         this.updateNavigationButtons();
         
         // Auto-advance to next question if not the last one
@@ -276,16 +292,16 @@ class PollApp {
     }
 
     nextQuestion() {
+        if (!this.questions || this.questions.length === 0) return;
+        
         const currentQuestionId = this.questions[this.currentQuestionIndex].id;
         
-        // Only proceed if current question is answered
         if (this.userAnswers[currentQuestionId] !== undefined) {
             this.currentQuestionIndex++;
             this.displayCurrentQuestion();
             
-            // Focus on the question for keyboard navigation (desktop only)
             if (!this.isMobile) {
-                this.yesBtn.focus();
+                this.yesBtn?.focus();
             }
         }
     }
@@ -295,17 +311,18 @@ class PollApp {
             this.currentQuestionIndex--;
             this.displayCurrentQuestion();
             
-            // Focus on the question for keyboard navigation (desktop only)
             if (!this.isMobile) {
-                this.yesBtn.focus();
+                this.yesBtn?.focus();
             }
         }
     }
 
     async submitAnswers() {
+        if (!this.questions || this.questions.length === 0) return;
+
         const userInfo = {
-            name: document.getElementById('voter-name').value,
-            email: document.getElementById('voter-email').value
+            name: document.getElementById('voter-name')?.value || '',
+            email: document.getElementById('voter-email')?.value || ''
         };
 
         // Validate all questions are answered
@@ -315,7 +332,6 @@ class PollApp {
 
         if (unansweredQuestions.length > 0) {
             alert('אנא ענה על כל השאלות לפני השליחה');
-            // Go to first unanswered question
             const firstUnanswered = this.questions.findIndex(question => 
                 this.userAnswers[question.id] === undefined
             );
@@ -332,8 +348,10 @@ class PollApp {
             answer: this.userAnswers[question.id]
         }));
 
-        this.submitBtn.disabled = true;
-        this.submitBtn.innerHTML = '<span class="btn-icon">⏳</span> שולח...';
+        if (this.submitBtn) {
+            this.submitBtn.disabled = true;
+            this.submitBtn.innerHTML = '<span class="btn-icon">⏳</span> שולח...';
+        }
 
         try {
             const response = await fetch('/api/vote', {
@@ -347,6 +365,10 @@ class PollApp {
                 })
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const result = await response.json();
 
             if (result.success) {
@@ -354,18 +376,22 @@ class PollApp {
                 this.userAnswers = result.results.yourAnswers;
                 this.showResults();
             } else {
-                alert('שגיאה בשליחת התשובות: ' + result.error);
+                throw new Error(result.error || 'Unknown error');
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error submitting answers:', error);
             alert('שגיאה בשליחת התשובות. אנא נסה שוב.');
         } finally {
-            this.submitBtn.disabled = false;
-            this.submitBtn.innerHTML = '<span class="btn-icon">📤</span> שלח תשובות (Enter)';
+            if (this.submitBtn) {
+                this.submitBtn.disabled = false;
+                this.submitBtn.innerHTML = '<span class="btn-icon">📤</span> שלח תשובות (Enter)';
+            }
         }
     }
 
     showResults() {
+        if (!this.currentResults) return;
+        
         this.displayCategoryResults(this.currentResults.summary);
         this.displayYourAnswers(this.userAnswers);
         this.displayDominantCategory(this.currentResults.dominantCategory, this.currentResults.categoryDescriptions);
@@ -380,15 +406,20 @@ class PollApp {
         this.resultsSection.classList.add('hidden');
         this.votingSection.classList.remove('hidden');
         this.copySuccess.classList.add('hidden');
-        document.getElementById('voter-name').value = '';
-        document.getElementById('voter-email').value = '';
+        
+        const voterName = document.getElementById('voter-name');
+        const voterEmail = document.getElementById('voter-email');
+        if (voterName) voterName.value = '';
+        if (voterEmail) voterEmail.value = '';
+        
         this.displayCurrentQuestion();
         this.votingSection.scrollIntoView({ behavior: 'smooth' });
     }
 
     displayCategoryResults(summary) {
-        this.totalVotesElement.textContent = `סה"כ תשובות: ${summary.totalResponses}`;
+        if (!this.totalVotesElement || !this.categoryResults) return;
         
+        this.totalVotesElement.textContent = `סה"כ תשובות: ${summary.totalResponses}`;
         this.categoryResults.innerHTML = '';
         
         Object.entries(summary.categoryScores).forEach(([category, scores]) => {
@@ -423,6 +454,8 @@ class PollApp {
     }
 
     displayYourAnswers(answers) {
+        if (!this.yourAnswersContainer) return;
+        
         this.yourAnswersContainer.innerHTML = '';
         
         answers.forEach(answer => {
@@ -495,7 +528,9 @@ class PollApp {
             ${this.getCategoryBreakdown(dominantData.scores)}
         `;
 
-        this.categoryResults.parentNode.insertBefore(dominantSection, this.categoryResults);
+        if (this.categoryResults && this.categoryResults.parentNode) {
+            this.categoryResults.parentNode.insertBefore(dominantSection, this.categoryResults);
+        }
     }
 
     getCategoryBreakdown(scores) {
@@ -593,6 +628,12 @@ class PollApp {
     showEmailInstructions() {
         alert('התוצאות הועתקו ללוח. ניתן כעת לפתוח תיבת דואר ולהדביק את התוצאות.');
     }
+
+    showError(message) {
+        console.error('App Error:', message);
+        // You could show a user-friendly error message here
+        alert(message);
+    }
 }
 
 // Add CSS for mobile-specific layout
@@ -609,7 +650,6 @@ const mobileStyles = `
         margin-top: 20px;
     }
     
-    /* Hide keyboard shortcuts on mobile by default */
     .desktop-only {
         display: flex;
     }
