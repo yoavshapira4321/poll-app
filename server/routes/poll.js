@@ -5,6 +5,8 @@ const { sendPollNotification } = require('../utils/email');
 
 // Submit poll response
 router.post('/submit', async (req, res) => {
+  let db;
+  
   try {
     const { question, selectedOption } = req.body;
 
@@ -12,12 +14,14 @@ router.post('/submit', async (req, res) => {
     const voterIp = req.ip || req.connection.remoteAddress;
     const userAgent = req.get('User-Agent');
 
-    console.log('📝 New poll submission:', { selectedOption, voterIp });
+    console.log('📝 New poll submission:', selectedOption);
+
+    // Get database connection
+    db = getDatabase();
 
     // Save to database
-    const db = getDatabase();
     const pollResponse = {
-      question,
+      question: question || 'How satisfied are you with our service?',
       selectedOption,
       voterInfo: {
         ip: voterIp,
@@ -31,31 +35,19 @@ router.post('/submit', async (req, res) => {
 
     // Send email notification
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      sendPollNotification({
-        question,
-        selectedOption,
-        voterInfo: {
-          ip: voterIp,
-          userAgent: userAgent
-        },
-        timestamp: new Date()
-      }).then(() => {
-        console.log('✅ Email sent successfully');
-      }).catch(emailError => {
-        console.log('📧 Email failed:', emailError.message);
-      });
-    } else {
-      console.log('⚠️ Email credentials not configured');
+      sendPollNotification(pollResponse)
+        .then(() => console.log('✅ Email sent successfully'))
+        .catch(error => console.log('📧 Email failed:', error.message));
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
       message: 'Poll submitted successfully',
       responseId: result.insertedId
     });
 
   } catch (error) {
-    console.error('❌ Poll submission error:', error);
+    console.error('❌ Poll submission error:', error.message);
     res.status(500).json({
       success: false,
       message: 'Error submitting poll',
@@ -80,7 +72,7 @@ router.get('/results', async (req, res) => {
 
     res.json({ success: true, results });
   } catch (error) {
-    console.error('❌ Results fetch error:', error);
+    console.error('❌ Results fetch error:', error.message);
     res.status(500).json({ 
       success: false, 
       message: 'Error fetching results',

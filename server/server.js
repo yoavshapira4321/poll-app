@@ -4,11 +4,6 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const { connectToDatabase, getDatabase } = require('./database');
 
-// Load environment variables
-require('dotenv').config();
-
-const pollRoutes = require('./routes/poll');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -19,28 +14,34 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../client')));
 
 // Database connection
-let db;
+let dbConnection;
+
+// Initialize database connection
 connectToDatabase()
-  .then(database => {
-    db = database;
-    console.log('✅ Database connection established');
+  .then(db => {
+    dbConnection = db;
+    console.log('✅ Database ready');
   })
   .catch(error => {
-    console.error('❌ Failed to connect to database:', error);
+    console.error('❌ Database initialization failed:', error.message);
   });
 
-// Routes
+// Import routes
+const pollRoutes = require('./routes/poll');
 app.use('/api/poll', pollRoutes);
 
-// Health check
+// Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
     let dbStatus = 'disconnected';
     
-    if (db) {
-      // Test the connection
-      await db.admin().ping();
-      dbStatus = 'connected';
+    if (dbConnection) {
+      try {
+        await dbConnection.admin().ping();
+        dbStatus = 'connected';
+      } catch (error) {
+        dbStatus = 'error: ' + error.message;
+      }
     }
 
     res.json({
@@ -50,10 +51,8 @@ app.get('/api/health', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    res.json({
-      status: 'OK',
-      environment: process.env.NODE_ENV || 'development',
-      database: 'error',
+    res.status(500).json({
+      status: 'Error',
       error: error.message,
       timestamp: new Date().toISOString()
     });
@@ -61,8 +60,13 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Serve frontend
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/index.html'));
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../client/index.html'));
 });
 
+// Export for Vercel
 module.exports = app;
