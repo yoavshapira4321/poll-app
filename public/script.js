@@ -1,5 +1,3 @@
-
-
 class PollApp {
     constructor() {
         this.votingSection = document.getElementById('voting-section');
@@ -24,6 +22,10 @@ class PollApp {
         this.prevBtn = document.getElementById('prev-btn');
         this.nextBtn = document.getElementById('next-btn');
         this.submitBtn = document.getElementById('submit-btn');
+        
+        // Content loader
+        this.contentLoader = window.contentLoader;
+        this.content = this.contentLoader?.getContent();
         
         this.questions = [];
         this.currentQuestionIndex = 0;
@@ -50,25 +52,33 @@ class PollApp {
             this.displayCurrentQuestion();
         } catch (error) {
             console.error('Error initializing app:', error);
-            this.showError('Failed to load questions. Please refresh the page.');
+            const errorMsg = this.contentLoader?.getUIText('errors.loadError') || 'Failed to load application. Please refresh the page.';
+            this.showError(errorMsg);
         }
     }
 
     async loadQuestions() {
         try {
-            console.log('Loading questions from API...');
-            const response = await fetch('/api/poll');
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            // Use questions from content.json instead of API
+            if (this.content?.questions) {
+                this.questions = this.content.questions;
+                console.log('Questions loaded from content:', this.questions.length);
+            } else {
+                // Fallback to API if content not available
+                console.log('Loading questions from API...');
+                const response = await fetch('/api/poll');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                this.questions = data.questions || [];
+                console.log('Questions loaded from API:', this.questions.length);
             }
             
-            const data = await response.json();
-            console.log('Questions loaded:', data.questions?.length || 0);
-            this.questions = data.questions || [];
-            
             if (this.questions.length === 0) {
-                console.warn('No questions received from API');
+                console.warn('No questions available');
             }
         } catch (error) {
             console.error('Error loading questions:', error);
@@ -176,7 +186,8 @@ class PollApp {
 
     displayCurrentQuestion() {
         if (!this.questions || this.questions.length === 0) {
-            this.showError('No questions available. Please try refreshing the page.');
+            const errorMsg = this.contentLoader?.getUIText('errors.loadError') || 'No questions available. Please try refreshing the page.';
+            this.showError(errorMsg);
             return;
         }
         
@@ -184,14 +195,26 @@ class PollApp {
         const questionNumber = this.currentQuestionIndex + 1;
         const totalQuestions = this.questions.length;
         
+        // Use content from content.json
         this.questionText.textContent = question.text;
-        this.questionCategory.textContent = `קטגוריה ${question.category}`;
+        
+        // Use contentLoader for category text
+        const categoryText = this.contentLoader?.getUIText(`categories.${question.category}`) || `קטגוריה ${question.category}`;
+        this.questionCategory.textContent = categoryText;
         this.questionCategory.className = `category-badge ${question.category.toLowerCase()}-badge`;
+        
         this.questionCounter.textContent = `${questionNumber}/${totalQuestions}`;
         
         const progress = (questionNumber / totalQuestions) * 100;
         this.progressFill.style.width = `${progress}%`;
-        this.progressText.textContent = `שאלה ${questionNumber} מתוך ${totalQuestions}`;
+        
+        // Use contentLoader for progress text with template
+        const progressTemplate = this.contentLoader?.getUIText('voting.progressText') || 'שאלה {current} מתוך {total}';
+        const progressText = this.contentLoader?.formatTemplate(progressTemplate, {
+            current: questionNumber,
+            total: totalQuestions
+        });
+        this.progressText.textContent = progressText;
         
         this.updateMobileUI();
         this.updateAnswerButtons();
@@ -312,7 +335,8 @@ class PollApp {
         );
 
         if (unansweredQuestions.length > 0) {
-            alert('אנא ענה על כל השאלות לפני השליחה');
+            const errorMsg = this.contentLoader?.getUIText('errors.noAnswer') || 'אנא ענה על כל השאלות לפני השליחה';
+            alert(errorMsg);
             const firstUnanswered = this.questions.findIndex(question => 
                 this.userAnswers[question.id] === undefined
             );
@@ -330,7 +354,8 @@ class PollApp {
 
         if (this.submitBtn) {
             this.submitBtn.disabled = true;
-            this.submitBtn.innerHTML = '<span class="btn-icon">⏳</span> שולח...';
+            const sendingText = this.contentLoader?.getUIText('voting.sending') || 'שולח...';
+            this.submitBtn.innerHTML = `<span class="btn-icon">⏳</span> ${sendingText}`;
         }
 
         try {
@@ -360,11 +385,13 @@ class PollApp {
             }
         } catch (error) {
             console.error('Error submitting answers:', error);
-            alert('שגיאה בשליחת התשובות. אנא נסה שוב.');
+            const errorMsg = this.contentLoader?.getUIText('errors.submitError') || 'שגיאה בשליחת התשובות. אנא נסה שוב.';
+            alert(errorMsg);
         } finally {
             if (this.submitBtn) {
                 this.submitBtn.disabled = false;
-                this.submitBtn.innerHTML = '<span class="btn-icon">📤</span> שלח תשובות (Enter)';
+                const submitText = this.contentLoader?.getUIText('navigation.submit') || 'שלח תשובות (Enter)';
+                this.submitBtn.innerHTML = `<span class="btn-icon">📤</span> ${submitText}`;
             }
         }
     }
@@ -374,7 +401,7 @@ class PollApp {
         
         this.displayCategoryResults(this.currentResults.summary);
         this.displayYourAnswers(this.userAnswers);
-        this.displayDominantCategory(this.currentResults.dominantCategory, this.currentResults.categoryDescriptions);
+        this.displayDominantCategory(this.currentResults.dominantCategory, this.currentResults.categoryMessage);
         this.votingSection.classList.add('hidden');
         this.resultsSection.classList.remove('hidden');
         this.resultsSection.scrollIntoView({ behavior: 'smooth' });
@@ -399,7 +426,11 @@ class PollApp {
     displayCategoryResults(summary) {
         if (!this.totalVotesElement || !this.categoryResults) return;
         
-        this.totalVotesElement.textContent = `סה"כ תשובות: ${summary.totalResponses}`;
+        // Use contentLoader for total votes text
+        const totalTemplate = this.contentLoader?.getUIText('results.totalResponses') || 'סה"כ תשובות: {count}';
+        const totalText = this.contentLoader?.formatTemplate(totalTemplate, { count: summary.totalResponses });
+        this.totalVotesElement.textContent = totalText;
+        
         this.categoryResults.innerHTML = '';
         
         Object.entries(summary.categoryScores).forEach(([category, scores]) => {
@@ -407,23 +438,28 @@ class PollApp {
             const yesPercentage = total > 0 ? ((scores.yes / total) * 100).toFixed(1) : 0;
             const noPercentage = total > 0 ? ((scores.no / total) * 100).toFixed(1) : 0;
             
+            // Use contentLoader for category text
+            const categoryTitle = this.contentLoader?.getUIText(`categories.${category}`) || `קטגוריה ${category}`;
+            const yesLabel = this.contentLoader?.getUIText('categories.yesAnswers') || 'תשובות "כן"';
+            const noLabel = this.contentLoader?.getUIText('categories.noAnswers') || 'תשובות "לא"';
+            
             const categoryCard = document.createElement('div');
             categoryCard.className = 'category-card';
             
             categoryCard.innerHTML = `
                 <div class="category-header">
-                    <div class="category-title">קטגוריה ${category}</div>
+                    <div class="category-title">${categoryTitle}</div>
                     <div class="total-responses">סה"כ: ${total}</div>
                 </div>
                 <div class="category-stats">
                     <div class="stat-item stat-yes">
                         <div class="stat-count">${scores.yes}</div>
-                        <div class="stat-label">תשובות "כן"</div>
+                        <div class="stat-label">${yesLabel}</div>
                         <div class="stat-percentage">${yesPercentage}%</div>
                     </div>
                     <div class="stat-item stat-no">
                         <div class="stat-count">${scores.no}</div>
-                        <div class="stat-label">תשובות "לא"</div>
+                        <div class="stat-label">${noLabel}</div>
                         <div class="stat-percentage">${noPercentage}%</div>
                     </div>
                 </div>
@@ -454,7 +490,7 @@ class PollApp {
         });
     }
 
-    displayDominantCategory(dominantData, descriptions) {
+    displayDominantCategory(dominantData, categoryMessage) {
         const existingDominant = document.getElementById('dominant-category');
         if (existingDominant) {
             existingDominant.remove();
@@ -464,30 +500,11 @@ class PollApp {
         dominantSection.id = 'dominant-category';
         dominantSection.className = 'dominant-category';
 
-        const categories = dominantData.dominant;
-        let messageConfig;
-        
-        if (categories.length === 1) {
-            messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === categories[0]);
-        } else if (categories.length === 2) {
-            const tieId = categories.sort().join('');
-            messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === tieId);
-        } else {
-            messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === 'ABC');
-        }
-        
-        if (!messageConfig) {
-            messageConfig = {
-                title: `סגנון התקשרות דומיננטי: ${categories.join(' + ')}`,
-                message: descriptions[categories[0]] || 'לא נמצאה הגדרה ספציפית לסגנון ההתקשרות שלך.'
-            };
-        }
-
-        const dominantClass = this.getDominantClass(categories);
+        const dominantClass = this.getDominantClass(dominantData.dominant);
 
         dominantSection.innerHTML = `
             <div class="dominant-header ${dominantClass}">
-                <h3>${messageConfig.title}</h3>
+                <h3>${categoryMessage.title}</h3>
                 <div class="dominant-scores">
                     <span class="score-a">A: ${dominantData.scores.A}</span>
                     <span class="score-b">B: ${dominantData.scores.B}</span>
@@ -496,9 +513,9 @@ class PollApp {
             </div>
             <div class="dominant-description">
                 <div class="message-header">
-                    <span class="style-badge">סגנון: ${messageConfig.style}</span>
+                    <span class="style-badge">סגנון: ${categoryMessage.style}</span>
                 </div>
-                <p class="personal-message">${messageConfig.message}</p>
+                <p class="personal-message">${categoryMessage.message}</p>
             </div>
             ${this.getCategoryBreakdown(dominantData.scores)}
         `;
@@ -531,12 +548,18 @@ class PollApp {
         const bPercent = ((scores.B / total) * 100).toFixed(1);
         const cPercent = ((scores.C / total) * 100).toFixed(1);
 
+        // Use contentLoader for breakdown text
+        const breakdownTitle = this.contentLoader?.getUIText('categories.breakdown') || 'חלוקת התשובות שלך:';
+        const styleA = this.contentLoader?.getUIText('categories.styleA') || 'סגנון A';
+        const styleB = this.contentLoader?.getUIText('categories.styleB') || 'סגנון B';
+        const styleC = this.contentLoader?.getUIText('categories.styleC') || 'סגנון C';
+
         return `
             <div class="breakdown">
-                <h4>חלוקת התשובות שלך:</h4>
+                <h4>${breakdownTitle}</h4>
                 <div class="breakdown-bars">
                     <div class="breakdown-bar">
-                        <div class="breakdown-label">סגנון A</div>
+                        <div class="breakdown-label">${styleA}</div>
                         <div class="breakdown-bar-container">
                             <div class="breakdown-fill breakdown-a" style="width: ${aPercent}%">
                                 <span>${aPercent}%</span>
@@ -545,7 +568,7 @@ class PollApp {
                         <div class="breakdown-count">${scores.A} תשובות</div>
                     </div>
                     <div class="breakdown-bar">
-                        <div class="breakdown-label">סגנון B</div>
+                        <div class="breakdown-label">${styleB}</div>
                         <div class="breakdown-bar-container">
                             <div class="breakdown-fill breakdown-b" style="width: ${bPercent}%">
                                 <span>${bPercent}%</span>
@@ -554,7 +577,7 @@ class PollApp {
                         <div class="breakdown-count">${scores.B} תשובות</div>
                     </div>
                     <div class="breakdown-bar">
-                        <div class="breakdown-label">סגנון C</div>
+                        <div class="breakdown-label">${styleC}</div>
                         <div class="breakdown-bar-container">
                             <div class="breakdown-fill breakdown-c" style="width: ${cPercent}%">
                                 <span>${cPercent}%</span>
@@ -578,7 +601,8 @@ class PollApp {
             this.copySuccess.classList.remove('hidden');
             
             const originalText = this.copyBtn.innerHTML;
-            this.copyBtn.innerHTML = '<span class="btn-icon">✅</span> הועתק!';
+            const copiedText = this.contentLoader?.getUIText('results.copied') || 'הועתק!';
+            this.copyBtn.innerHTML = `<span class="btn-icon">✅</span> ${copiedText}`;
             
             this.copySuccess.scrollIntoView({ behavior: 'smooth' });
             
@@ -588,7 +612,8 @@ class PollApp {
             
         } catch (error) {
             console.error('Failed to copy results:', error);
-            alert('שגיאה בהעתקת התוצאות. אנא נסה שוב.');
+            const errorMsg = this.contentLoader?.getUIText('errors.copyError') || 'שגיאה בהעתקת התוצאות. אנא נסה שוב.';
+            alert(errorMsg);
         }
     }
 
@@ -616,7 +641,8 @@ class PollApp {
     }
 
     showEmailInstructions() {
-        alert('התוצאות הועתקו ללוח. ניתן כעת לפתוח תיבת דואר ולהדביק את התוצאות.');
+        const instructions = this.contentLoader?.getUIText('results.emailInstructions') || 'התוצאות הועתקו ללוח. ניתן כעת לפתוח תיבת דואר ולהדביק את התוצאות.';
+        alert(instructions);
     }
 
     showError(message) {
@@ -624,52 +650,6 @@ class PollApp {
         alert(message);
     }
 }
-
-// Complete Category messages configuration
-const CATEGORY_MESSAGES = [
-  {
-    "id": "A",
-    "style": "חרד",
-    "title": "A דומיננטי – חרד",
-    "message": "נראה שסגנון ההתקשרות החרד בולט אצלך. אתה נוטה להשקיע הרבה רגש במערכות יחסים ולעיתים קרובות חושש לאבד את הקרבה עם בן/בת הזוג. הרגישות שלך יכולה לסייע לך לקלוט שינויים במצב הרוח של האחר, אך לעיתים היא מובילה לדאגות מיותרות. עבודה על ביטחון עצמי ובניית אמון הדדי תסייע לך להרגיש רגוע ויציב יותר במערכות יחסים."
-  },
-  {
-    "id": "B",
-    "style": "בטוח",
-    "title": "B דומיננטי – בטוח",
-    "message": "סגנון ההתקשרות הבטוח דומיננטי אצלך. יש לך יכולת טבעית ליצור קרבה וחום במערכות יחסים, ואתה נוטה לשמור על איזון רגשי גם במצבי לחץ. אתה מסוגל לבטא את רגשותיך ולתמוך בבן/בת הזוג בפתיחות. זהו בסיס מצוין להמשך קשרים בריאים ומספקים."
-  },
-  {
-    "id": "C",
-    "style": "נמנע",
-    "title": "C דומיננטי – נמנע",
-    "message": "נראה שסגנון ההתקשרות הנמנע דומיננטי אצלך. אתה מעריך מאוד את העצמאות שלך ולעיתים מתקשה להרגיש בנוח עם קרבה רגשית עמוקה. ייתכן שאתה שומר מרחק כדי להגן על עצמך, אך זה עלול להקשות על חוויית אינטימיות במערכת היחסים. למידה לשתף יותר את עולמך הפנימי יכולה להעשיר את מערכות היחסים שלך."
-  },
-  {
-    "id": "AB",
-    "style": "חרד-בטוח",
-    "title": "A–B דומיננטיים – חרד ובטוח (תיקו)",
-    "message": "יש לך שילוב בין מאפייני סגנון חרד לסגנון בטוח. אתה מעריך קרבה רגשית ומודע לצרכים שלך ושל האחרים, אך לעיתים עולה חשש או חוסר ביטחון בנוגע ליציבות הקשר. טיפוח הביטחון העצמי ושמירה על תקשורת פתוחה יכולים לעזור לך להטות את הכף לכיוון סגנון בטוח יותר."
-  },
-  {
-    "id": "AC",
-    "style": "חרד-נמנע",
-    "title": "A–C דומיננטיים – חרד ונמנע (תיקו)",
-    "message": "אצלך מופיעים גם מאפיינים חרדתיים וגם מאפיינים נמנעים – שילוב שיכול ליצור מתח פנימי בין הרצון בקרבה לצורך לשמור מרחק. לעיתים אתה עשוי לחוות בלבול במערכות יחסים ולשלוח מסרים מעורבים. מודעות לדפוס זה ועבודה על ויסות רגשי ותקשורת ברורה עם בן/בת הזוג יכולים להביא לשיפור בתחושת הביטחון בקשר."
-  },
-  {
-    "id": "BC",
-    "style": "בטוח-נמנע",
-    "title": "B–C דומיננטיים – בטוח ונמנע (תיקו)",
-    "message": "נראה שאתה מאזן בין הצורך בעצמאות ובקרבה. לרוב אתה מרגיש בטוח בקשרים אך לעיתים יש נטייה לשמור על גבולות ברורים מדי ולצמצם אינטימיות. טיפוח נכונות לשתף רגשות ולשמור על גמישות רגשית יחזק את האמון ואת הקרבה עם בן/בת הזוג."
-  },
-  {
-    "id": "ABC",
-    "style": "מעורב",
-    "title": "A–B–C מאוזנים – תיקו משולש",
-    "message": "אין סגנון התקשרות אחד שמוביל בבירור אצלך – אתה מגלה חלקים חרדתיים, בטוחים ונמנעים במינונים דומים. המשמעות היא שהתגובות שלך במערכות יחסים עשויות להשתנות לפי נסיבות, בן/בת הזוג והקשר הספציפי. פיתוח מודעות עצמית ועקביות בתקשורת ובגבולות יכול לסייע לך לבחור את ההתנהלות שמקדמת מערכות יחסים יציבות ובריאות."
-  }
-];
 
 // Add CSS for mobile-specific layout
 const mobileStyles = `
@@ -709,7 +689,10 @@ const styleSheet = document.createElement('style');
 styleSheet.textContent = mobileStyles;
 document.head.appendChild(styleSheet);
 
-// Initialize the app when DOM is loaded
+// Initialize the app when DOM is loaded and content is ready
 document.addEventListener('DOMContentLoaded', () => {
-    new PollApp();
+    // Wait a brief moment for contentLoader to initialize
+    setTimeout(() => {
+        new PollApp();
+    }, 100);
 });

@@ -1,183 +1,144 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title></title> <!-- will be filled by JS -->
-  <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>סקר יחסים - Relationship Survey</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
 </head>
 <body>
-  <div class="container">
+    <div class="container">
+        <header>
+            <h1><!-- Content will be injected --></h1>
+            <p><!-- Content will be injected --></p>
+        </header>
 
-    <!-- HEADER -->
-    <header>
-      <h1></h1>
-      <p></p>
-    </header>
+        <main>
+            <!-- Voting Section -->
+            <div id="voting-section" class="poll-card">
+                <div class="voter-info">
+                    <h3><!-- Content will be injected --></h3>
+                    <div class="input-group">
+                        <input type="text" id="voter-name" placeholder="<!-- Content will be injected -->">
+                        <input type="email" id="voter-email" placeholder="<!-- Content will be injected -->">
+                    </div>
+                </div>
 
-    <main>
-      <!-- Voting Section -->
-      <div id="voting-section" class="poll-card">
+                <!-- Progress Bar -->
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="progress-text"><!-- Content will be injected --></div>
+                </div>
 
-        <!-- Voter Info -->
-        <div class="voter-info">
-          <h3></h3>
-          <div class="input-group">
-            <input type="text" id="voter-name" placeholder="">
-            <input type="email" id="voter-email" placeholder="">
-          </div>
-        </div>
+                <!-- Single Question Display -->
+                <div id="question-container" class="question-container">
+                    <div class="question-card">
+                        <div class="question-header">
+                            <div class="category-badge" id="question-category"><!-- Content will be injected --></div>
+                            <div class="question-counter" id="question-counter"><!-- Content will be injected --></div>
+                        </div>
+                        <div class="question-text" id="question-text">
+                            <!-- Question text will be populated by script.js -->
+                        </div>
+                        <div class="answer-options">
+                            <button class="answer-btn yes-btn" data-answer="yes" id="yes-btn">
+                                <span class="btn-icon">✅</span>
+                                <!-- Content will be injected -->
+                            </button>
+                            <button class="answer-btn no-btn" data-answer="no" id="no-btn">
+                                <span class="btn-icon">❌</span>
+                                <!-- Content will be injected -->
+                            </button>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Progress Bar -->
-        <div class="progress-container">
-          <div class="progress-bar">
-            <div class="progress-fill" id="progress-fill"></div>
-          </div>
-          <div class="progress-text" id="progress-text"></div>
-        </div>
+                <!-- Navigation -->
+                <div class="navigation-buttons">
+                    <button class="nav-btn prev-btn" id="prev-btn" disabled>
+                        <span class="btn-icon">←</span>
+                        <!-- Content will be injected -->
+                    </button>
+                    <button class="nav-btn next-btn" id="next-btn">
+                        <!-- Content will be injected -->
+                        <span class="btn-icon">→</span>
+                    </button>
+                    <button class="nav-btn submit-btn hidden" id="submit-btn">
+                        <span class="btn-icon">📤</span>
+                        <!-- Content will be injected -->
+                    </button>
+                </div>
 
-        <!-- Single Question Display -->
-        <div id="question-container" class="question-container">
-          <div class="question-card">
-            <div class="question-header">
-              <div class="category-badge" id="question-category"></div>
-              <div class="question-counter" id="question-counter"></div>
+                <!-- Keyboard Help -->
+                <div class="keyboard-help">
+                    <h4><!-- Content will be injected --></h4>
+                    <div class="shortcuts">
+                        <span class="shortcut desktop-only"><!-- Content will be injected --></span>
+                        <span class="shortcut desktop-only"><!-- Content will be injected --></span>
+                        <span class="shortcut desktop-only"><!-- Content will be injected --></span>
+                        <span class="shortcut desktop-only"><!-- Content will be injected --></span>
+                        <span class="shortcut desktop-only"><!-- Content will be injected --></span>
+                        <span class="shortcut mobile-only"><!-- Content will be injected --></span>
+                        <span class="shortcut mobile-only"><!-- Content will be injected --></span>
+                    </div>
+                </div>
             </div>
-            <div class="question-text" id="question-text"></div>
-            <div class="answer-options">
-              <button class="answer-btn yes-btn" data-answer="yes" id="yes-btn">
-                <span class="btn-icon">✅</span>
-              </button>
-              <button class="answer-btn no-btn" data-answer="no" id="no-btn">
-                <span class="btn-icon">❌</span>
-              </button>
+
+            <!-- Results Section -->
+            <div id="results-section" class="poll-card hidden">
+                <h2><!-- Content will be injected --></h2>
+                
+                <div class="results-header">
+                    <h3><!-- Content will be injected --></h3>
+                    <div class="total-votes-badge" id="total-votes"><!-- Content will be injected --></div>
+                </div>
+
+                <!-- Dominant Category will be inserted here by JavaScript -->
+
+                <!-- Category Results -->
+                <div id="category-results" class="category-results">
+                    <!-- Category results will be populated by script.js -->
+                </div>
+
+                <!-- Your Answers -->
+                <div class="your-answers">
+                    <h3><!-- Content will be injected --></h3>
+                    <div id="your-answers-container"></div>
+                </div>
+
+                <div class="results-actions">
+                    <button id="copy-results-btn" class="action-btn copy-btn">
+                        <span class="btn-icon">📋</span>
+                        <!-- Content will be injected -->
+                    </button>
+                    <button id="share-email-btn" class="action-btn email-btn">
+                        <span class="btn-icon">📧</span>
+                        <!-- Content will be injected -->
+                    </button>
+                    <button id="new-vote-btn" class="action-btn new-vote-btn">
+                        <span class="btn-icon">🗳️</span>
+                        <!-- Content will be injected -->
+                    </button>
+                </div>
+
+                <!-- Copy Success Message -->
+                <div id="copy-success" class="success-message hidden">
+                    <span class="success-icon">✅</span>
+                    <!-- Content will be injected -->
+                </div>
             </div>
-          </div>
-        </div>
+        </main>
 
-        <!-- Navigation -->
-        <div class="navigation-buttons">
-          <button class="nav-btn prev-btn" id="prev-btn" disabled>
-            <span class="btn-icon">←</span>
-          </button>
-          <button class="nav-btn next-btn" id="next-btn">
-            <span class="btn-icon">→</span>
-          </button>
-          <button class="nav-btn submit-btn hidden" id="submit-btn">
-            <span class="btn-icon">📤</span>
-          </button>
-        </div>
+        <footer>
+            <p><!-- Content will be injected --></p>
+        </footer>
+    </div>
 
-        <!-- Shortcuts Help -->
-        <div class="keyboard-help">
-          <h4></h4>
-          <div class="shortcuts"></div>
-        </div>
-      </div>
-
-      <!-- Results Section -->
-      <div id="results-section" class="poll-card hidden">
-        <h2></h2>
-
-        <div class="results-header">
-          <h3></h3>
-          <div class="total-votes-badge" id="total-votes"></div>
-        </div>
-
-        <!-- Dominant category will be inserted by JS -->
-
-        <div id="category-results" class="category-results"></div>
-
-        <div class="your-answers">
-          <h3></h3>
-          <div id="your-answers-container"></div>
-        </div>
-
-        <div class="results-actions">
-          <button id="copy-results-btn" class="action-btn copy-btn">
-            <span class="btn-icon">📋</span>
-          </button>
-          <button id="share-email-btn" class="action-btn email-btn">
-            <span class="btn-icon">📧</span>
-          </button>
-          <button id="new-vote-btn" class="action-btn new-vote-btn">
-            <span class="btn-icon">🗳️</span>
-          </button>
-        </div>
-
-        <div id="copy-success" class="success-message hidden">
-          <span class="success-icon">✅</span>
-        </div>
-      </div>
-    </main>
-
-    <!-- FOOTER -->
-    <footer>
-      <p></p>
-    </footer>
-
-  </div>
-
-  <script id="content-data" type="application/json">
-document.addEventListener("DOMContentLoaded", () => {
-  fetch("content.json")
-    .then(res => res.json())
-    .then(content => {
-      // Header
-      document.querySelector("header h1").textContent = content.header.title;
-      document.querySelector("header p").textContent = content.header.subtitle;
-
-      // Voter info
-      document.querySelector(".voter-info h3").textContent = content.voterInfo.title;
-      document.getElementById("voter-name").placeholder = content.voterInfo.namePlaceholder;
-      document.getElementById("voter-email").placeholder = content.voterInfo.emailPlaceholder;
-
-      // Progress bar
-      document.getElementById("progress-text").textContent =
-        content.progress.textTemplate.replace("{{current}}", "1").replace("{{total}}", "21");
-
-      // Buttons
-      document.getElementById("yes-btn").innerHTML = `<span class="btn-icon">✅</span> ${content.questionSection.yes}`;
-      document.getElementById("no-btn").innerHTML = `<span class="btn-icon">❌</span> ${content.questionSection.no}`;
-      document.getElementById("prev-btn").innerHTML = `<span class="btn-icon">←</span> ${content.navigation.prev}`;
-      document.getElementById("next-btn").innerHTML = `${content.navigation.next} <span class="btn-icon">→</span>`;
-      document.getElementById("submit-btn").innerHTML = `<span class="btn-icon">📤</span> ${content.navigation.submit}`;
-
-      // Shortcuts
-      document.querySelector(".keyboard-help h4").textContent = content.shortcuts.title;
-      const shortcuts = document.querySelector(".shortcuts");
-      shortcuts.innerHTML = `
-        <span class="shortcut desktop-only"><kbd>1</kbd> - ${content.questionSection.yes}</span>
-        <span class="shortcut desktop-only"><kbd>0</kbd> - ${content.questionSection.no}</span>
-        <span class="shortcut desktop-only"><kbd>→</kbd> - ${content.navigation.next}</span>
-        <span class="shortcut desktop-only"><kbd>←</kbd> - ${content.navigation.prev}</span>
-        <span class="shortcut desktop-only"><kbd>Enter</kbd> - ${content.navigation.submit}</span>
-        <span class="shortcut mobile-only">${content.shortcuts.mobile.tap}</span>
-        <span class="shortcut mobile-only">${content.shortcuts.mobile.mobileReady}</span>
-      `;
-
-      // Results
-      document.querySelector("#results-section h2").textContent = content.results.title;
-      document.querySelector(".results-header h3").textContent = content.results.summaryTitle;
-      document.getElementById("total-votes").textContent = content.results.totalVotes + "0";
-      document.querySelector(".your-answers h3").textContent = content.results.yourAnswers;
-
-      document.getElementById("copy-results-btn").innerHTML = `<span class="btn-icon">📋</span> ${content.results.copyResults}`;
-      document.getElementById("share-email-btn").innerHTML = `<span class="btn-icon">📧</span> ${content.results.shareEmail}`;
-      document.getElementById("new-vote-btn").innerHTML = `<span class="btn-icon">🗳️</span> ${content.results.newVote}`;
-
-      document.getElementById("copy-success").innerHTML = `<span class="success-icon">✅</span> ${content.results.copySuccess}`;
-
-      // Footer
-      document.querySelector("footer p").textContent = content.footer.copyright;
-    })
-    .catch(err => console.error("Failed to load content.json:", err));
-});
-
-</script>
-
-
-  <script src="script.js"></script>
+    <!-- Load content first, then the main app -->
+    <script src="content-loader.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
