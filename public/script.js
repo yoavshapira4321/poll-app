@@ -24,6 +24,82 @@ class PollApp {
         this.shareEmailBtn.addEventListener('click', () => this.showEmailInstructions());
         this.newVoteBtn.addEventListener('click', () => this.showVotingForm());
     }
+    displayResults(data) {
+    this.resultsQuestion.textContent = data.question;
+    this.totalVotesElement.textContent = `Total Votes: ${data.totalVotes}`;
+    
+    this.resultsContainer.innerHTML = '';
+    
+    // Sort options by vote count (descending)
+    const sortedOptions = Object.entries(data.options)
+        .sort(([, votesA], [, votesB]) => votesB - votesA);
+    
+    sortedOptions.forEach(([option, votes], index) => {
+        const percentage = data.totalVotes > 0 
+            ? ((votes / data.totalVotes) * 100).toFixed(1) 
+            : 0;
+        
+        const resultItem = document.createElement('div');
+        resultItem.className = 'result-item';
+        
+        // Add ranking indicator
+        const rank = index + 1;
+        const rankClass = rank === 1 ? 'rank-first' : 
+                         rank === 2 ? 'rank-second' : 
+                         rank === 3 ? 'rank-third' : 'rank-other';
+        
+        resultItem.innerHTML = `
+            <div class="result-header">
+                <div class="rank-badge ${rankClass}">#${rank}</div>
+                <div class="result-info">
+                    <span class="option-name">${option}</span>
+                    <span class="vote-count">${votes} votes (${percentage}%)</span>
+                </div>
+            </div>
+            <div class="result-bar">
+                <div class="bar-fill" style="width: ${percentage}%">
+                    <span>${percentage}%</span>
+                </div>
+            </div>
+            ${this.getTrendingInfo(rank, percentage)}
+        `;
+        
+        this.resultsContainer.appendChild(resultItem);
+    });
+}
+
+getTrendingInfo(rank, percentage) {
+    if (rank === 1 && percentage > 50) {
+        return '<div class="trending-info trending-popular">🌟 Most Popular Choice</div>';
+    } else if (rank === 1) {
+        return '<div class="trending-info trending-leading">🔥 Currently Leading</div>';
+    } else if (percentage < 10) {
+        return '<div class="trending-info trending-rare">💎 Rare Choice</div>';
+    }
+    return '';
+}
+
+formatResultsForClipboard(data) {
+    let text = `Poll Results: ${data.question}\n\n`;
+    text += `Total Votes: ${data.totalVotes}\n\n`;
+    
+    // Sort by votes descending
+    const sortedOptions = Object.entries(data.options)
+        .sort(([, votesA], [, votesB]) => votesB - votesA);
+    
+    sortedOptions.forEach(([option, votes], index) => {
+        const percentage = data.totalVotes > 0 
+            ? ((votes / data.totalVotes) * 100).toFixed(1) 
+            : 0;
+        const rank = index + 1;
+        text += `#${rank} ${option}: ${votes} votes (${percentage}%)\n`;
+    });
+    
+    text += `\nGenerated on: ${new Date().toLocaleDateString()}\n`;
+    text += `Poll URL: ${window.location.href}`;
+    
+    return text;
+}
 
     async loadResults() {
         try {
