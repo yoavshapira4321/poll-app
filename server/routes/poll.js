@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const PollResponse = require('../models/Poll');
+const { getDatabase } = require('../database');
 const { sendPollNotification } = require('../utils/email');
 
-// Submit poll response - should be at /api/poll/submit
+// Submit poll response
 router.post('/submit', async (req, res) => {
   try {
     const { question, selectedOption } = req.body;
@@ -12,20 +12,11 @@ router.post('/submit', async (req, res) => {
     const voterIp = req.ip || req.connection.remoteAddress;
     const userAgent = req.get('User-Agent');
 
+    console.log('📝 New poll submission:', { selectedOption, voterIp });
+
     // Save to database
-    const pollResponse = new PollResponse({
-      question,
-      selectedOption,
-      voterInfo: {
-        ip: voterIp,
-        userAgent: userAgent
-      }
-    });
-
-    await pollResponse.save();
-
-    // Send email notification (don't await - handle separately)
-    sendPollNotification({
+    const db = getDatabase();
+    const pollResponse = {
       question,
       selectedOption,
       voterInfo: {
@@ -33,41 +24,68 @@ router.post('/submit', async (req, res) => {
         userAgent: userAgent
       },
       timestamp: new Date()
-    }).then(() => {
-      console.log('✅ Email sent successfully');
-    }).catch(emailError => {
-      console.log('📧 Email failed but poll was saved to database');
-    });
+    };
+
+    const result = await db.collection('pollresponses').insertOne(pollResponse);
+    console.log('✅ Poll saved to database with ID:', result.insertedId);
+
+    // Send email notification
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      sendPollNotification({
+        question,
+        selectedOption,
+        voterInfo: {
+          ip: voterIp,
+          userAgent: userAgent
+        },
+        timestamp: new Date()
+      }).then(() => {
+        console.log('✅ Email sent successfully');
+      }).catch(emailError => {
+        console.log('📧 Email failed:', emailError.message);
+      });
+    } else {
+      console.log('⚠️ Email credentials not configured');
+    }
 
     res.status(200).json({
       success: true,
-      message: 'Poll submitted successfully'
+      message: 'Poll submitted successfully',
+      responseId: result.insertedId
     });
 
   } catch (error) {
-    console.error('Poll submission error:', error);
+    console.error('❌ Poll submission error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error submitting poll'
+      message: 'Error submitting poll',
+      error: error.message
     });
   }
 });
 
-// Get poll results - should be at /api/poll/results
+// Get poll results
 router.get('/results', async (req, res) => {
   try {
-    const results = await PollResponse.aggregate([
+    const db = getDatabase();
+    
+    const results = await db.collection('pollresponses').aggregate([
       {
         $group: {
           _id: '$selectedOption',
           count: { $sum: 1 }
         }
       }
-    ]);
+    ]).toArray();
 
     res.json({ success: true, results });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Error fetching results' });
+    console.error('❌ Results fetch error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Error fetching results',
+      error: error.message
+    });
   }
 });
 
