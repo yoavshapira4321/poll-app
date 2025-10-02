@@ -1,96 +1,140 @@
 // content-loader.js
 document.addEventListener('DOMContentLoaded', function() {
-    // Load the content from content.json
-    fetch('content.json')
+    console.log('Content loader started...');
+    
+    // Fix the path - go up one level from public/ to get content.json
+    fetch('../content.json')
         .then(response => {
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error('Network response was not ok: ' + response.status);
+            }
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Expected JSON but got: ' + contentType);
             }
             return response.json();
         })
         .then(data => {
+            console.log('Content loaded successfully:', data);
             injectContent(data);
-            // After content is loaded, initialize the main app
-            initializeApp();
         })
         .catch(error => {
             console.error('Error loading content:', error);
-            // Fallback to default content if JSON fails to load
+            console.log('Using fallback content...');
             injectFallbackContent();
-            initializeApp();
         });
 
     function injectContent(data) {
-        const lang = 'he'; // Default to Hebrew
-        const ui = data.ui[lang];
-        const system = data.system;
+        try {
+            const lang = 'he'; // Default to Hebrew
+            const ui = data.ui[lang];
+            const system = data.system;
 
-        // Inject header content
-        document.querySelector('header h1').textContent = ui.header.title;
-        document.querySelector('header p').textContent = ui.header.subtitle;
+            if (!ui) {
+                throw new Error('UI content not found for language: ' + lang);
+            }
 
-        // Inject voting section content
-        document.querySelector('#voting-section .voter-info h3').textContent = ui.voting.personalInfo;
-        document.querySelector('#voter-name').placeholder = ui.voting.namePlaceholder;
-        document.querySelector('#voter-email').placeholder = ui.voting.emailPlaceholder;
-        document.querySelector('#submit-btn').innerHTML = `<span class="btn-icon">📤</span>${ui.voting.submitButton}`;
-        document.querySelector('#progress-text').textContent = system.defaultProgress;
-        document.querySelector('.keyboard-help h4').textContent = ui.voting.keyboardHelp;
+            // Inject header content
+            const headerTitle = document.querySelector('header h1');
+            const headerSubtitle = document.querySelector('header p');
+            if (headerTitle) headerTitle.textContent = ui.header?.title || 'סקר יחסים';
+            if (headerSubtitle) headerSubtitle.textContent = ui.header?.subtitle || 'אנא ענה על השאלות הבאות';
 
-        // Inject navigation content
-        document.querySelector('#prev-btn').innerHTML = `<span class="btn-icon">←</span>${ui.navigation.previous}`;
-        document.querySelector('#next-btn').innerHTML = `${ui.navigation.next}<span class="btn-icon">→</span>`;
-        
-        // Inject answer buttons content
-        document.querySelector('#yes-btn').innerHTML = `<span class="btn-icon">✅</span>${ui.answers.yes}`;
-        document.querySelector('#no-btn').innerHTML = `<span class="btn-icon">❌</span>${ui.answers.no}`;
+            // Inject voting section content
+            const personalInfo = document.querySelector('#voting-section .voter-info h3');
+            const voterName = document.querySelector('#voter-name');
+            const voterEmail = document.querySelector('#voter-email');
+            const submitBtn = document.querySelector('#submit-btn');
+            const progressText = document.querySelector('#progress-text');
+            const keyboardHelp = document.querySelector('.keyboard-help h4');
 
-        // Inject keyboard shortcuts
-        const shortcutsContainer = document.querySelector('.shortcuts');
-        shortcutsContainer.innerHTML = '';
-        
-        // Desktop shortcuts
-        data.keyboardShortcuts.desktop.forEach(shortcut => {
-            const shortcutEl = document.createElement('span');
-            shortcutEl.className = 'shortcut desktop-only';
-            shortcutEl.textContent = `${shortcut.key} - ${shortcut.action}`;
-            shortcutsContainer.appendChild(shortcutEl);
-        });
+            if (personalInfo) personalInfo.textContent = ui.voting?.personalInfo || 'מידע אישי';
+            if (voterName) voterName.placeholder = ui.voting?.namePlaceholder || 'שמך';
+            if (voterEmail) voterEmail.placeholder = ui.voting?.emailPlaceholder || 'אימייל';
+            if (submitBtn) submitBtn.innerHTML = `<span class="btn-icon">📤</span>${ui.voting?.submitButton || 'שלח תשובות'}`;
+            if (progressText) progressText.textContent = system?.defaultProgress || 'שאלה 1 מתוך 21';
+            if (keyboardHelp) keyboardHelp.textContent = ui.voting?.keyboardHelp || 'קיצורי דרך:';
 
-        // Mobile instructions
-        data.keyboardShortcuts.mobile.forEach(instruction => {
-            const shortcutEl = document.createElement('span');
-            shortcutEl.className = 'shortcut mobile-only';
-            shortcutEl.textContent = instruction;
-            shortcutsContainer.appendChild(shortcutEl);
-        });
+            // Inject navigation content
+            const prevBtn = document.querySelector('#prev-btn');
+            const nextBtn = document.querySelector('#next-btn');
+            
+            if (prevBtn) prevBtn.innerHTML = `<span class="btn-icon">←</span>${ui.navigation?.previous || 'הקודם'}`;
+            if (nextBtn) nextBtn.innerHTML = `${ui.navigation?.next || 'הבא'}<span class="btn-icon">→</span>`;
+            
+            // Inject answer buttons content
+            const yesBtn = document.querySelector('#yes-btn');
+            const noBtn = document.querySelector('#no-btn');
+            
+            if (yesBtn) yesBtn.innerHTML = `<span class="btn-icon">✅</span>${ui.answers?.yes || 'כן'}`;
+            if (noBtn) noBtn.innerHTML = `<span class="btn-icon">❌</span>${ui.answers?.no || 'לא'}`;
 
-        // Inject results section content
-        document.querySelector('#results-section h2').textContent = ui.results.title;
-        document.querySelector('#results-section .results-header h3').textContent = ui.results.summary;
-        document.querySelector('#total-votes').textContent = system.defaultTotalVotes;
-        document.querySelector('#copy-results-btn').innerHTML = `<span class="btn-icon">📋</span>${ui.results.copyResults}`;
-        document.querySelector('#share-email-btn').innerHTML = `<span class="btn-icon">📧</span>${ui.results.shareEmail}`;
-        document.querySelector('#new-vote-btn').innerHTML = `<span class="btn-icon">🗳️</span>${ui.results.newVote}`;
-        document.querySelector('#copy-success').innerHTML = `<span class="success-icon">✅</span>${ui.results.copySuccess}`;
+            // Inject keyboard shortcuts
+            const shortcutsContainer = document.querySelector('.shortcuts');
+            if (shortcutsContainer && data.keyboardShortcuts) {
+                shortcutsContainer.innerHTML = '';
+                
+                // Desktop shortcuts
+                if (data.keyboardShortcuts.desktop) {
+                    data.keyboardShortcuts.desktop.forEach(shortcut => {
+                        const shortcutEl = document.createElement('span');
+                        shortcutEl.className = 'shortcut desktop-only';
+                        shortcutEl.textContent = `${shortcut.key} - ${shortcut.action}`;
+                        shortcutsContainer.appendChild(shortcutEl);
+                    });
+                }
 
-        // Inject footer content
-        document.querySelector('footer p').textContent = data.footer.text;
+                // Mobile instructions
+                if (data.keyboardShortcuts.mobile) {
+                    data.keyboardShortcuts.mobile.forEach(instruction => {
+                        const shortcutEl = document.createElement('span');
+                        shortcutEl.className = 'shortcut mobile-only';
+                        shortcutEl.textContent = instruction;
+                        shortcutsContainer.appendChild(shortcutEl);
+                    });
+                }
+            }
 
-        // Store the data for later use
-        window.surveyData = data;
+            // Inject results section content
+            const resultsTitle = document.querySelector('#results-section h2');
+            const resultsHeader = document.querySelector('#results-section .results-header h3');
+            const totalVotes = document.querySelector('#total-votes');
+            const copyResultsBtn = document.querySelector('#copy-results-btn');
+            const shareEmailBtn = document.querySelector('#share-email-btn');
+            const newVoteBtn = document.querySelector('#new-vote-btn');
+            const copySuccess = document.querySelector('#copy-success');
+
+            if (resultsTitle) resultsTitle.textContent = ui.results?.title || 'תוצאות הסקר';
+            if (resultsHeader) resultsHeader.textContent = ui.results?.summary || 'סיכום קטגוריות';
+            if (totalVotes) totalVotes.textContent = system?.defaultTotalVotes || 'סה"כ תשובות: 0';
+            if (copyResultsBtn) copyResultsBtn.innerHTML = `<span class="btn-icon">📋</span>${ui.results?.copyResults || 'העתק תוצאות'}`;
+            if (shareEmailBtn) shareEmailBtn.innerHTML = `<span class="btn-icon">📧</span>${ui.results?.shareEmail || 'שתף באימייל'}`;
+            if (newVoteBtn) newVoteBtn.innerHTML = `<span class="btn-icon">🗳️</span>${ui.results?.newVote || 'מלא שוב'}`;
+            if (copySuccess) copySuccess.innerHTML = `<span class="success-icon">✅</span>${ui.results?.copySuccess || 'התוצאות הועתקו!'}`;
+
+            // Inject footer content
+            const footer = document.querySelector('footer p');
+            if (footer) footer.textContent = data.footer?.text || '© 2024 סקר יחסים. כל התשובות אנונימיות.';
+
+            // Store the data for later use
+            window.surveyData = data;
+            console.log('Content injected successfully');
+
+        } catch (error) {
+            console.error('Error injecting content:', error);
+            injectFallbackContent();
+        }
     }
 
     function injectFallbackContent() {
-        // Basic fallback content in case JSON fails to load
+        console.log('Injecting fallback content...');
+        // Basic fallback content
         const fallbackContent = {
-            questions: [
-                // Basic fallback questions would go here
-            ],
+            questions: [],
             ui: {
                 he: {
                     header: {
-                        title: "סקר יחסים - Relationship Survey",
+                        title: "סקר יחסים",
                         subtitle: "אנא ענה על השאלות הבאות בנוגע לרגשותיך במערכות יחסים"
                     },
                     voting: {
@@ -102,8 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     navigation: {
                         previous: "הקודם",
-                        next: "הבא",
-                        submit: "שלח תשובות"
+                        next: "הבא"
                     },
                     answers: {
                         yes: "כן",
@@ -124,12 +167,41 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
 
-        injectContent(fallbackContent);
-    }
+        // Store fallback data
+        window.surveyData = fallbackContent;
+        
+        // Simple fallback injection
+        const elements = {
+            'header h1': 'סקר יחסים',
+            'header p': 'אנא ענה על השאלות הבאות בנוגע לרגשותיך במערכות יחסים',
+            '#voting-section .voter-info h3': 'מידע אישי (אופציונלי)',
+            '#voter-name': 'שמך',
+            '#voter-email': 'אימייל',
+            '#submit-btn': '📤 שלח תשובות',
+            '.keyboard-help h4': 'קיצורי דרך:',
+            '#prev-btn': '← הקודם',
+            '#next-btn': 'הבא →',
+            '#yes-btn': '✅ כן',
+            '#no-btn': '❌ לא',
+            '#results-section h2': 'תוצאות הסקר',
+            '#results-section .results-header h3': 'סיכום קטגוריות',
+            '#copy-results-btn': '📋 העתק תוצאות',
+            '#share-email-btn': '📧 שתף באימייל',
+            '#new-vote-btn': '🗳️ מלא שוב',
+            'footer p': '© 2024 סקר יחסים. כל התשובות אנונימיות.'
+        };
 
-    function initializeApp() {
-        // This function will be called after content is loaded
-        // The main app logic from script.js will use the window.surveyData
-        console.log('Content loaded successfully. Ready to initialize main app.');
+        Object.entries(elements).forEach(([selector, text]) => {
+            const element = document.querySelector(selector);
+            if (element) {
+                if (selector.includes('-btn')) {
+                    element.innerHTML = text;
+                } else if (selector.includes('placeholder')) {
+                    element.placeholder = text;
+                } else {
+                    element.textContent = text;
+                }
+            }
+        });
     }
 });
