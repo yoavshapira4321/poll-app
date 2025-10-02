@@ -1,141 +1,124 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>סקר יחסים - Relationship Survey</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title> <!-- will be filled by JS -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>סקר יחסים - Relationship Survey</h1>
-            <p>אנא ענה על השאלות הבאות בנוגע לרגשותיך במערכות יחסים</p>
-        </header>
+  <div class="container">
 
-        <main>
-            <!-- Voting Section -->
-            <div id="voting-section" class="poll-card">
-                <div class="voter-info">
-                    <h3>מידע אישי (אופציונלי)</h3>
-                    <div class="input-group">
-                        <input type="text" id="voter-name" placeholder="שמך">
-                        <input type="email" id="voter-email" placeholder="אימייל">
-                    </div>
-                </div>
+    <!-- HEADER -->
+    <header>
+      <h1></h1>
+      <p></p>
+    </header>
 
-                <!-- Progress Bar -->
-                <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progress-fill"></div>
-                    </div>
-                    <div class="progress-text" id="progress-text">שאלה 1 מתוך 21</div>
-                </div>
+    <main>
+      <!-- Voting Section -->
+      <div id="voting-section" class="poll-card">
 
-                <!-- Single Question Display -->
-                <div id="question-container" class="question-container">
-                    <div class="question-card">
-                        <div class="question-header">
-                            <div class="category-badge" id="question-category">קטגוריה A</div>
-                            <div class="question-counter" id="question-counter">1/21</div>
-                        </div>
-                        <div class="question-text" id="question-text">
-                            <!-- Question text will be populated here -->
-                        </div>
-                        <div class="answer-options">
-                            <button class="answer-btn yes-btn" data-answer="yes" id="yes-btn">
-                                <span class="btn-icon">✅</span>
-                                כן (1)
-                            </button>
-                            <button class="answer-btn no-btn" data-answer="no" id="no-btn">
-                                <span class="btn-icon">❌</span>
-                                לא (0)
-                            </button>
-                        </div>
-                    </div>
-                </div>
+        <!-- Voter Info -->
+        <div class="voter-info">
+          <h3></h3>
+          <div class="input-group">
+            <input type="text" id="voter-name" placeholder="">
+            <input type="email" id="voter-email" placeholder="">
+          </div>
+        </div>
 
-                <!-- Navigation -->
-                <div class="navigation-buttons">
-                    <button class="nav-btn prev-btn" id="prev-btn" disabled>
-                        <span class="btn-icon">←</span>
-                        הקודם (←)
-                    </button>
-                    <button class="nav-btn next-btn" id="next-btn">
-                        הבא (→)
-                        <span class="btn-icon">→</span>
-                    </button>
-                    <button class="nav-btn submit-btn hidden" id="submit-btn">
-                        <span class="btn-icon">📤</span>
-                        שלח תשובות (Enter)
-                    </button>
-                </div>
-                    <div class="keyboard-help">
-                        <h4>קיצורי דרך:</h4>
-                        <div class="shortcuts">
-                            <span class="shortcut desktop-only"><kbd>1</kbd> - כן</span>
-                            <span class="shortcut desktop-only"><kbd>0</kbd> - לא</span>
-                            <span class="shortcut desktop-only"><kbd>→</kbd> - הבא</span>
-                            <span class="shortcut desktop-only"><kbd>←</kbd> - הקודם</span>
-                            <span class="shortcut desktop-only"><kbd>Enter</kbd> - שלח</span>
-                            <span class="shortcut mobile-only">👆 לחץ על הכפתורים למטה</span>
-                            <span class="shortcut mobile-only">📱 מתאים למובייל</span>
-                        </div>
-                    </div>
+        <!-- Progress Bar -->
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <div class="progress-text" id="progress-text"></div>
+        </div>
+
+        <!-- Single Question Display -->
+        <div id="question-container" class="question-container">
+          <div class="question-card">
+            <div class="question-header">
+              <div class="category-badge" id="question-category"></div>
+              <div class="question-counter" id="question-counter"></div>
             </div>
-
-            <!-- Results Section -->
-            <div id="results-section" class="poll-card hidden">
-                <!-- ... (keep existing results section unchanged) ... -->
-                <h2>תוצאות הסקר</h2>
-                
-                <div class="results-header">
-                    <h3>סיכום קטגוריות</h3>
-                    <div class="total-votes-badge" id="total-votes">סה"כ תשובות: 0</div>
-                </div>
-
-                <!-- Dominant Category will be inserted here by JavaScript -->
-
-                <!-- Category Results -->
-                <div id="category-results" class="category-results">
-                    <!-- Category results will be populated here -->
-                </div>
-
-                <!-- Your Answers -->
-                <div class="your-answers">
-                    <h3>התשובות שלך</h3>
-                    <div id="your-answers-container"></div>
-                </div>
-
-                <div class="results-actions">
-                    <button id="copy-results-btn" class="action-btn copy-btn">
-                        <span class="btn-icon">📋</span>
-                        העתק תוצאות
-                    </button>
-                    <button id="share-email-btn" class="action-btn email-btn">
-                        <span class="btn-icon">📧</span>
-                        שתף באימייל
-                    </button>
-                    <button id="new-vote-btn" class="action-btn new-vote-btn">
-                        <span class="btn-icon">🗳️</span>
-                        מלא שוב
-                    </button>
-                </div>
-
-                <!-- Copy Success Message -->
-                <div id="copy-success" class="success-message hidden">
-                    <span class="success-icon">✅</span>
-                    התוצאות הועתקו! ניתן להדביק אותן באימייל.
-                </div>
+            <div class="question-text" id="question-text"></div>
+            <div class="answer-options">
+              <button class="answer-btn yes-btn" data-answer="yes" id="yes-btn">
+                <span class="btn-icon">✅</span>
+              </button>
+              <button class="answer-btn no-btn" data-answer="no" id="no-btn">
+                <span class="btn-icon">❌</span>
+              </button>
             </div>
-        </main>
+          </div>
+        </div>
 
-        <footer>
-            <p>© 2024 סקר יחסים. כל התשובות אנונימיות.</p>
-        </footer>
-    </div>
+        <!-- Navigation -->
+        <div class="navigation-buttons">
+          <button class="nav-btn prev-btn" id="prev-btn" disabled>
+            <span class="btn-icon">←</span>
+          </button>
+          <button class="nav-btn next-btn" id="next-btn">
+            <span class="btn-icon">→</span>
+          </button>
+          <button class="nav-btn submit-btn hidden" id="submit-btn">
+            <span class="btn-icon">📤</span>
+          </button>
+        </div>
 
-    <script src="script.js"></script>
+        <!-- Shortcuts Help -->
+        <div class="keyboard-help">
+          <h4></h4>
+          <div class="shortcuts"></div>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div id="results-section" class="poll-card hidden">
+        <h2></h2>
+
+        <div class="results-header">
+          <h3></h3>
+          <div class="total-votes-badge" id="total-votes"></div>
+        </div>
+
+        <!-- Dominant category will be inserted by JS -->
+
+        <div id="category-results" class="category-results"></div>
+
+        <div class="your-answers">
+          <h3></h3>
+          <div id="your-answers-container"></div>
+        </div>
+
+        <div class="results-actions">
+          <button id="copy-results-btn" class="action-btn copy-btn">
+            <span class="btn-icon">📋</span>
+          </button>
+          <button id="share-email-btn" class="action-btn email-btn">
+            <span class="btn-icon">📧</span>
+          </button>
+          <button id="new-vote-btn" class="action-btn new-vote-btn">
+            <span class="btn-icon">🗳️</span>
+          </button>
+        </div>
+
+        <div id="copy-success" class="success-message hidden">
+          <span class="success-icon">✅</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+      <p></p>
+    </footer>
+
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
