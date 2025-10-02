@@ -947,3 +947,168 @@ kbd {
         min-height: 44px; /* Apple's recommended minimum touch target */
     }
 }
+
+/* Enhanced Dominant Category Styles */
+.dominant-header h3 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+    text-align: center;
+}
+
+.dominant-scores {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.dominant-description {
+    padding: 25px;
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.message-header {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.style-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+    backdrop-filter: blur(10px);
+}
+
+.personal-message {
+    margin: 0;
+    line-height: 1.8;
+    font-size: 16px;
+    color: #333;
+    text-align: center;
+}
+
+/* Additional dominant category colors for combinations */
+.dominant-ab {
+    background: linear-gradient(135deg, #e74c3c, #3498db);
+}
+
+.dominant-ac {
+    background: linear-gradient(135deg, #e74c3c, #27ae60);
+}
+
+.dominant-bc {
+    background: linear-gradient(135deg, #3498db, #27ae60);
+}
+
+.dominant-abc {
+    background: linear-gradient(135deg, #9b59b6, #e74c3c, #3498db);
+}
+
+/* Breakdown bar colors for combinations */
+.breakdown-ab {
+    background: linear-gradient(135deg, #e74c3c, #3498db);
+}
+
+.breakdown-ac {
+    background: linear-gradient(135deg, #e74c3c, #27ae60);
+}
+
+.breakdown-bc {
+    background: linear-gradient(135deg, #3498db, #27ae60);
+}
+
+.breakdown-abc {
+    background: linear-gradient(135deg, #9b59b6, #e74c3c, #3498db);
+}
+
+/* Enhanced breakdown styles */
+.breakdown {
+    padding: 20px 25px;
+    background: #f8f9fa;
+}
+
+.breakdown h4 {
+    margin: 0 0 20px 0;
+    color: #333;
+    text-align: center;
+    font-size: 18px;
+}
+
+.breakdown-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.breakdown-bar {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.breakdown-label {
+    width: 100px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+}
+
+.breakdown-bar-container {
+    flex: 1;
+    height: 30px;
+    background: #e9ecef;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+}
+
+.breakdown-fill {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 12px;
+    transition: width 0.8s ease-in-out;
+    min-width: 40px;
+}
+
+.breakdown-count {
+    width: 100px;
+    text-align: left;
+    font-size: 12px;
+    color: #666;
+}
+
+/* Mobile adjustments for dominant category */
+@media (max-width: 768px) {
+    .dominant-header h3 {
+        font-size: 20px;
+    }
+    
+    .dominant-scores {
+        flex-direction: column;
+        gap: 10px;
+        font-size: 16px;
+    }
+    
+    .personal-message {
+        font-size: 15px;
+        line-height: 1.6;
+    }
+    
+    .breakdown-label {
+        width: 80px;
+    }
+    
+    .breakdown-count {
+        width: 80px;
+    }
+}

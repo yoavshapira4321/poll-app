@@ -475,63 +475,78 @@ class PollApp {
     }
 
     displayDominantCategory(dominantData, descriptions) {
-        const existingDominant = document.getElementById('dominant-category');
-        if (existingDominant) {
-            existingDominant.remove();
-        }
-
-        const dominantSection = document.createElement('div');
-        dominantSection.id = 'dominant-category';
-        dominantSection.className = 'dominant-category';
-
-        const categories = dominantData.dominant;
-        const isTie = categories.length > 1;
-
-        let title, description, dominantClass;
-        
-        if (isTie) {
-            title = `שילוב סגנונות: ${categories.join(' + ')}`;
-            description = 'נראה שיש לך מאפיינים מכמה סגנונות התקשרות.';
-            dominantClass = 'dominant-tie';
-        } else {
-            const mainCategory = categories[0];
-            title = `סגנון התקשרות דומיננטי: ${mainCategory}`;
-            description = descriptions[mainCategory];
-            
-            switch(mainCategory) {
-                case 'A':
-                    dominantClass = 'dominant-a';
-                    break;
-                case 'B':
-                    dominantClass = 'dominant-b';
-                    break;
-                case 'C':
-                    dominantClass = 'dominant-c';
-                    break;
-                default:
-                    dominantClass = 'dominant-tie';
-            }
-        }
-
-        dominantSection.innerHTML = `
-            <div class="dominant-header ${dominantClass}">
-                <h3>${title}</h3>
-                <div class="dominant-scores">
-                    <span class="score-a">A: ${dominantData.scores.A}</span>
-                    <span class="score-b">B: ${dominantData.scores.B}</span>
-                    <span class="score-c">C: ${dominantData.scores.C}</span>
-                </div>
-            </div>
-            <div class="dominant-description">
-                <p>${description}</p>
-            </div>
-            ${this.getCategoryBreakdown(dominantData.scores)}
-        `;
-
-        if (this.categoryResults && this.categoryResults.parentNode) {
-            this.categoryResults.parentNode.insertBefore(dominantSection, this.categoryResults);
-        }
+    const existingDominant = document.getElementById('dominant-category');
+    if (existingDominant) {
+        existingDominant.remove();
     }
+
+    const dominantSection = document.createElement('div');
+    dominantSection.id = 'dominant-category';
+    dominantSection.className = 'dominant-category';
+
+    // Determine which message to show based on dominant categories
+    const categories = dominantData.dominant;
+    let messageConfig;
+    
+    if (categories.length === 1) {
+        // Single dominant category
+        messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === categories[0]);
+    } else if (categories.length === 2) {
+        // Two-way tie
+        const tieId = categories.sort().join(''); // Sort to get consistent order (AB, AC, BC)
+        messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === tieId);
+    } else {
+        // Three-way tie
+        messageConfig = CATEGORY_MESSAGES.find(msg => msg.id === 'ABC');
+    }
+    
+    // Fallback if no specific message found
+    if (!messageConfig) {
+        messageConfig = {
+            title: `סגנון התקשרות דומיננטי: ${categories.join(' + ')}`,
+            message: descriptions[categories[0]] || 'לא נמצאה הגדרה ספציפית לסגנון ההתקשרות שלך.'
+        };
+    }
+
+    const dominantClass = this.getDominantClass(categories);
+
+    dominantSection.innerHTML = `
+        <div class="dominant-header ${dominantClass}">
+            <h3>${messageConfig.title}</h3>
+            <div class="dominant-scores">
+                <span class="score-a">A: ${dominantData.scores.A}</span>
+                <span class="score-b">B: ${dominantData.scores.B}</span>
+                <span class="score-c">C: ${dominantData.scores.C}</span>
+            </div>
+        </div>
+        <div class="dominant-description">
+            <div class="message-header">
+                <span class="style-badge">סגנון: ${messageConfig.style}</span>
+            </div>
+            <p class="personal-message">${messageConfig.message}</p>
+        </div>
+        ${this.getCategoryBreakdown(dominantData.scores)}
+    `;
+
+    if (this.categoryResults && this.categoryResults.parentNode) {
+        this.categoryResults.parentNode.insertBefore(dominantSection, this.categoryResults);
+    }
+}
+
+getDominantClass(categories) {
+    if (categories.length === 1) {
+        switch(categories[0]) {
+            case 'A': return 'dominant-a';
+            case 'B': return 'dominant-b';
+            case 'C': return 'dominant-c';
+        }
+    } else if (categories.length === 2) {
+        if (categories.includes('A') && categories.includes('B')) return 'dominant-ab';
+        if (categories.includes('A') && categories.includes('C')) return 'dominant-ac';
+        if (categories.includes('B') && categories.includes('C')) return 'dominant-bc';
+    }
+    return 'dominant-abc';
+}
 
     getCategoryBreakdown(scores) {
         const total = scores.A + scores.B + scores.C;
