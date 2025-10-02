@@ -48,6 +48,9 @@ class PollApp {
                          rank === 2 ? 'rank-second' : 
                          rank === 3 ? 'rank-third' : 'rank-other';
         
+        // Calculate relative position info
+        const positionInfo = this.getPositionInfo(rank, votes, data.totalVotes);
+        
         resultItem.innerHTML = `
             <div class="result-header">
                 <div class="rank-badge ${rankClass}">#${rank}</div>
@@ -61,11 +64,50 @@ class PollApp {
                     <span>${percentage}%</span>
                 </div>
             </div>
-            ${this.getTrendingInfo(rank, percentage)}
+            ${positionInfo}
         `;
         
         this.resultsContainer.appendChild(resultItem);
     });
+}
+
+getPositionInfo(rank, votes, totalVotes) {
+    const percentage = totalVotes > 0 ? (votes / totalVotes * 100) : 0;
+    
+    if (rank === 1 && percentage > 50) {
+        return '<div class="trending-info trending-popular">🌟 Majority Choice (>50%)</div>';
+    } else if (rank === 1) {
+        return '<div class="trending-info trending-leading">🔥 Currently Leading</div>';
+    } else if (rank <= 3 && percentage > 20) {
+        return '<div class="trending-info trending-strong">💪 Strong Contender</div>';
+    } else if (percentage < 5) {
+        return '<div class="trending-info trending-rare">💎 Rare Choice (<5%)</div>';
+    } else if (percentage < 15) {
+        return '<div class="trending-info trending-niche">🎯 Niche Preference</div>';
+    }
+    return '';
+}
+
+formatResultsForClipboard(data) {
+    let text = `Poll Results: ${data.question}\n\n`;
+    text += `Total Votes: ${data.totalVotes}\n`;
+    text += `Last Updated: ${new Date(data.lastUpdated).toLocaleDateString()}\n\n`;
+    
+    // Sort by votes descending
+    const sortedOptions = Object.entries(data.options)
+        .sort(([, votesA], [, votesB]) => votesB - votesA);
+    
+    sortedOptions.forEach(([option, votes], index) => {
+        const percentage = data.totalVotes > 0 
+            ? ((votes / data.totalVotes) * 100).toFixed(1) 
+            : 0;
+        const rank = index + 1;
+        text += `#${rank} ${option}: ${votes} votes (${percentage}%)\n`;
+    });
+    
+    text += `\nPoll URL: ${window.location.href}`;
+    
+    return text;
 }
 
 getTrendingInfo(rank, percentage) {
@@ -177,34 +219,51 @@ formatResultsForClipboard(data) {
     }
 
     displayResults(data) {
-        this.resultsQuestion.textContent = data.question;
-        this.totalVotesElement.textContent = `Total Votes: ${data.totalVotes}`;
+    this.resultsQuestion.textContent = data.question;
+    this.totalVotesElement.textContent = `Total Votes: ${data.totalVotes}`;
+    
+    this.resultsContainer.innerHTML = '';
+    
+    // Sort options by vote count (descending)
+    const sortedOptions = Object.entries(data.options)
+        .sort(([, votesA], [, votesB]) => votesB - votesA);
+    
+    sortedOptions.forEach(([option, votes], index) => {
+        const percentage = data.totalVotes > 0 
+            ? ((votes / data.totalVotes) * 100).toFixed(1) 
+            : 0;
         
-        this.resultsContainer.innerHTML = '';
+        const resultItem = document.createElement('div');
+        resultItem.className = 'result-item';
         
-        Object.entries(data.options).forEach(([option, votes]) => {
-            const percentage = data.totalVotes > 0 
-                ? ((votes / data.totalVotes) * 100).toFixed(1) 
-                : 0;
-            
-            const resultItem = document.createElement('div');
-            resultItem.className = 'result-item';
-            
-            resultItem.innerHTML = `
+        // Add ranking indicator
+        const rank = index + 1;
+        const rankClass = rank === 1 ? 'rank-first' : 
+                         rank === 2 ? 'rank-second' : 
+                         rank === 3 ? 'rank-third' : 'rank-other';
+        
+        // Calculate relative position info
+        const positionInfo = this.getPositionInfo(rank, votes, data.totalVotes);
+        
+        resultItem.innerHTML = `
+            <div class="result-header">
+                <div class="rank-badge ${rankClass}">#${rank}</div>
                 <div class="result-info">
-                    <span>${option}</span>
-                    <span>${votes} votes (${percentage}%)</span>
+                    <span class="option-name">${option}</span>
+                    <span class="vote-count">${votes} votes (${percentage}%)</span>
                 </div>
-                <div class="result-bar">
-                    <div class="bar-fill" style="width: ${percentage}%">
-                        <span>${percentage}%</span>
-                    </div>
+            </div>
+            <div class="result-bar">
+                <div class="bar-fill" style="width: ${percentage}%">
+                    <span>${percentage}%</span>
                 </div>
-            `;
-            
-            this.resultsContainer.appendChild(resultItem);
-        });
-    }
+            </div>
+            ${positionInfo}
+        `;
+        
+        this.resultsContainer.appendChild(resultItem);
+    });
+}
 
     async copyResultsToClipboard() {
         if (!this.currentResults) return;

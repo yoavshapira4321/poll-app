@@ -1,40 +1,61 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs').promises;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Database setup
-const dbPath = path.join(__dirname, 'poll.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err.message);
-  } else {
-    console.log('Connected to SQLite database.');
-    
-    // Ensure poll options exist
-    initializePollOptions();
-  }
-});
+// Database file path
+const DB_PATH = path.join(__dirname, 'poll-data.json');
 
-// Initialize poll options
-function initializePollOptions() {
-  const options = ['JavaScript', 'Python', 'Java', 'C++', 'Other'];
-  
-  options.forEach(option => {
-    db.run(
-      'INSERT OR IGNORE INTO poll_results (option_name, votes) VALUES (?, ?)',
-      [option, 0],
-      (err) => {
-        if (err) {
-          console.error('Error initializing option:', err);
-        }
-      }
-    );
-  });
+// Default poll structure
+const DEFAULT_POLL = {
+  question: "What's your favorite programming language?",
+  options: {
+    "JavaScript": 0,
+    "Python": 0,
+    "Java": 0,
+    "C++": 0,
+    "Other": 0
+  },
+  totalVotes: 0,
+  lastUpdated: new Date().toISOString()
+};
+
+// Initialize database file
+async function initializeDatabase() {
+  try {
+    await fs.access(DB_PATH);
+    console.log('📁 Database file exists');
+  } catch (error) {
+    console.log('📁 Creating new database file...');
+    await savePollData(DEFAULT_POLL);
+  }
+}
+
+// Load poll data
+async function loadPollData() {
+  try {
+    const data = await fs.readFile(DB_PATH, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error loading poll data:', error);
+    return DEFAULT_POLL;
+  }
+}
+
+// Save poll data
+async function savePollData(pollData) {
+  try {
+    pollData.lastUpdated = new Date().toISOString();
+    await fs.writeFile(DB_PATH, JSON.stringify(pollData, null, 2));
+    return true;
+  } catch (error) {
+    console.error('Error saving poll data:', error);
+    return false;
+  }
 }
 
 // Middleware
@@ -42,41 +63,24 @@ app.use(cors({ origin: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Poll question (can be made configurable)
-const POLL_QUESTION = "What's your favorite programming language?";
-
 // API Routes
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-    database: 'SQLite'
+    database: 'JSON File'
   });
 });
 
-app.get('/api/poll', (req, res) => {
-  db.all('SELECT option_name, votes FROM poll_results ORDER BY option_name', (err, rows) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Failed to fetch poll results' });
-    }
-
-    // Calculate total votes
-    const totalVotes = rows.reduce((sum, row) => sum + row.votes, 0);
-    
-    // Convert to the expected format
-    const options = {};
-    rows.forEach(row => {
-      options[row.option_name] = row.votes;
-    });
-
-    res.json({
-      question: POLL_QUESTION,
-      options: options,
-      totalVotes: totalVotes
-    });
-  });
+app.get('/api/poll', async (req, res) => {
+  try {
+    const pollData = await loadPollData();
+    res.json(pollData);
+  } catch (error) {
+    console.error('Error fetching poll data:', error);
+    res.status(500).json({ error: 'Failed to fetch poll results' });
+  }
 });
 
 app.post('/api/vote', async (req, res) => {
@@ -89,124 +93,72 @@ app.post('/api/vote', async (req, res) => {
   }
 
   try {
-    // Start a transaction
-    await new Promise((resolve, reject) => {
-      db.run('BEGIN TRANSACTION', (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-
+    // Load current data
+    const pollData = await loadPollData();
+    
     // Update vote count
-    await new Promise((resolve, reject) => {
-      db.run(
-        'UPDATE poll_results SET votes = votes + 1, updated_at = CURRENT_TIMESTAMP WHERE option_name = ?',
-        [selectedOption],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this);
-        }
-      );
-    });
+    pollData.options[selectedOption]++;
+    pollData.totalVotes++;
+    
+    // Save updated data
+    const saved = await savePollData(pollData);
+    
+    if (!saved) {
+      throw new Error('Failed to save poll data');
+    }
 
-    // Record individual vote (optional)
-    await new Promise((resolve, reject) => {
-      db.run(
-        'INSERT INTO votes (option_name, voter_name, voter_email, ip_address) VALUES (?, ?, ?, ?)',
-        [selectedOption, voterInfo?.name || null, voterInfo?.email || null, req.ip],
-        function(err) {
-          if (err) reject(err);
-          else resolve(this);
-        }
-      );
-    });
+    console.log(`📊 New vote for: ${selectedOption}`);
+    console.log(`👤 Voter: ${voterInfo?.name || 'Anonymous'}`);
+    console.log(`📈 Total votes: ${pollData.totalVotes}`);
 
-    // Commit transaction
-    await new Promise((resolve, reject) => {
-      db.run('COMMIT', (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-
-    // Get updated results
-    db.all('SELECT option_name, votes FROM poll_results ORDER BY option_name', (err, rows) => {
-      if (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ error: 'Vote recorded but failed to fetch updated results' });
-      }
-
-      const totalVotes = rows.reduce((sum, row) => sum + row.votes, 0);
-      const options = {};
-      rows.forEach(row => {
-        options[row.option_name] = row.votes;
-      });
-
-      console.log(`📊 New vote for: ${selectedOption}`);
-      console.log(`📈 Total votes: ${totalVotes}`);
-
-      res.json({ 
-        success: true, 
-        message: 'Vote recorded successfully!',
-        results: {
-          question: POLL_QUESTION,
-          options: options,
-          totalVotes: totalVotes
-        }
-      });
+    res.json({ 
+      success: true, 
+      message: 'Vote recorded successfully!',
+      results: pollData
     });
 
   } catch (error) {
-    // Rollback on error
-    db.run('ROLLBACK');
-    console.error('Database transaction error:', error);
+    console.error('Error recording vote:', error);
     res.status(500).json({ error: 'Failed to record vote' });
   }
 });
 
 // Additional API endpoints for statistics
-app.get('/api/stats', (req, res) => {
-  db.all(`
-    SELECT 
-      option_name,
-      votes,
-      (SELECT SUM(votes) FROM poll_results) as total_votes,
-      ROUND((votes * 100.0 / (SELECT SUM(votes) FROM poll_results)), 1) as percentage
-    FROM poll_results 
-    ORDER BY votes DESC
-  `, (err, rows) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Failed to fetch statistics' });
-    }
+app.get('/api/stats', async (req, res) => {
+  try {
+    const pollData = await loadPollData();
+    const results = Object.entries(pollData.options).map(([option, votes]) => ({
+      option_name: option,
+      votes: votes,
+      total_votes: pollData.totalVotes,
+      percentage: pollData.totalVotes > 0 ? 
+        Number(((votes / pollData.totalVotes) * 100).toFixed(1)) : 0
+    })).sort((a, b) => b.votes - a.votes);
 
     res.json({
-      question: POLL_QUESTION,
-      results: rows,
-      timestamp: new Date().toISOString()
+      question: pollData.question,
+      results: results,
+      timestamp: pollData.lastUpdated
     });
-  });
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
 });
 
-app.get('/api/recent-votes', (req, res) => {
-  const limit = parseInt(req.query.limit) || 10;
-  
-  db.all(`
-    SELECT option_name, voter_name, created_at 
-    FROM votes 
-    ORDER BY created_at DESC 
-    LIMIT ?
-  `, [limit], (err, rows) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Failed to fetch recent votes' });
-    }
-
-    res.json({
-      recentVotes: rows,
-      total: rows.length
+// Reset poll endpoint (optional - for testing)
+app.post('/api/reset', async (req, res) => {
+  try {
+    await savePollData(DEFAULT_POLL);
+    res.json({ 
+      success: true, 
+      message: 'Poll reset successfully',
+      results: DEFAULT_POLL
     });
-  });
+  } catch (error) {
+    console.error('Error resetting poll:', error);
+    res.status(500).json({ error: 'Failed to reset poll' });
+  }
 });
 
 // Static files
@@ -217,21 +169,21 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('Closing database connection...');
-  db.close((err) => {
-    if (err) {
-      console.error('Error closing database:', err.message);
-    } else {
-      console.log('Database connection closed.');
-    }
-    process.exit(0);
-  });
-});
+// Initialize and start server
+async function startServer() {
+  await initializeDatabase();
+  
+  const initialData = await loadPollData();
+  console.log('📊 Initial poll data loaded:');
+  console.log(`   Question: ${initialData.question}`);
+  console.log(`   Total Votes: ${initialData.totalVotes}`);
+  console.log(`   Last Updated: ${initialData.lastUpdated}`);
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🗃️ Database: SQLite (${dbPath})`);
-});
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🗃️ Database: JSON File (${DB_PATH})`);
+  });
+}
+
+startServer().catch(console.error);
