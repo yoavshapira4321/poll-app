@@ -1,4 +1,4 @@
-// script.js - Complete fixed version
+// script.js - Complete fixed version with error handling
 class PollApp {
     constructor() {
         this.votingSection = document.getElementById('voting-section');
@@ -29,7 +29,8 @@ class PollApp {
         this.nextBtn = document.getElementById('next-btn');
         this.submitBtn = document.getElementById('submit-btn');
         
-        this.questions = this.content?.questions || [];
+        // Initialize with fallback questions to prevent undefined errors
+        this.questions = this.content?.questions || FALLBACK_QUESTIONS;
         this.currentQuestionIndex = 0;
         this.userAnswers = {};
         this.currentResults = null;
@@ -48,10 +49,15 @@ class PollApp {
 
     async init() {
         try {
-            // If questions weren't loaded from content, try to load them
+            console.log('Initializing PollApp...');
+            console.log('Questions loaded:', this.questions.length);
+            
+            // Double-check we have questions
             if (this.questions.length === 0) {
-                await this.loadQuestions();
+                console.warn('No questions found, using fallback');
+                this.questions = FALLBACK_QUESTIONS;
             }
+            
             this.setupEventListeners();
             this.setupTouchEvents();
             this.displayCurrentQuestion();
@@ -177,18 +183,33 @@ class PollApp {
     }
 
     displayCurrentQuestion() {
+        // ADD COMPREHENSIVE SAFETY CHECK
         if (!this.questions || this.questions.length === 0) {
             this.showError(this.ui?.errors?.loadError || 'No questions available. Please try refreshing the page.');
             return;
         }
         
+        // Ensure current index is within bounds
+        if (this.currentQuestionIndex >= this.questions.length) {
+            console.warn('Current index out of bounds, resetting to 0');
+            this.currentQuestionIndex = 0;
+        }
+        
         const question = this.questions[this.currentQuestionIndex];
+        
+        // ADD SAFETY CHECK FOR QUESTION OBJECT
+        if (!question) {
+            console.error('Invalid question at index:', this.currentQuestionIndex);
+            this.showError('Invalid question data. Please refresh the page.');
+            return;
+        }
+        
         const questionNumber = this.currentQuestionIndex + 1;
         const totalQuestions = this.questions.length;
         
-        this.questionText.textContent = question.text;
+        this.questionText.textContent = question.text || 'Question text not available';
         this.questionCategory.textContent = `${this.ui?.categories?.[question.category] || `קטגוריה ${question.category}`}`;
-        this.questionCategory.className = `category-badge ${question.category.toLowerCase()}-badge`;
+        this.questionCategory.className = `category-badge ${question.category?.toLowerCase()}-badge` || 'category-badge';
         this.questionCounter.textContent = `${questionNumber}/${totalQuestions}`;
         
         const progress = (questionNumber / totalQuestions) * 100;
@@ -224,9 +245,19 @@ class PollApp {
     }
 
     updateAnswerButtons() {
-        if (!this.questions || this.questions.length === 0) return;
+        // ADD SAFETY CHECK
+        if (!this.questions || this.questions.length === 0 || this.currentQuestionIndex >= this.questions.length) {
+            return;
+        }
         
-        const currentQuestionId = this.questions[this.currentQuestionIndex].id;
+        const currentQuestion = this.questions[this.currentQuestionIndex];
+        // ADD SAFETY CHECK FOR QUESTION OBJECT
+        if (!currentQuestion || !currentQuestion.id) {
+            console.error('Invalid question at index:', this.currentQuestionIndex, currentQuestion);
+            return;
+        }
+        
+        const currentQuestionId = currentQuestion.id;
         const currentAnswer = this.userAnswers[currentQuestionId];
         
         this.yesBtn?.classList.remove('selected');
@@ -240,11 +271,21 @@ class PollApp {
     }
 
     updateNavigationButtons() {
-        if (!this.questions || this.questions.length === 0) return;
+        // ADD SAFETY CHECK
+        if (!this.questions || this.questions.length === 0 || this.currentQuestionIndex >= this.questions.length) {
+            return;
+        }
+        
+        const currentQuestion = this.questions[this.currentQuestionIndex];
+        // ADD SAFETY CHECK FOR QUESTION OBJECT
+        if (!currentQuestion || !currentQuestion.id) {
+            console.error('Invalid question at index:', this.currentQuestionIndex, currentQuestion);
+            return;
+        }
         
         const isFirstQuestion = this.currentQuestionIndex === 0;
         const isLastQuestion = this.currentQuestionIndex === this.questions.length - 1;
-        const currentQuestionId = this.questions[this.currentQuestionIndex].id;
+        const currentQuestionId = currentQuestion.id;
         const hasAnswer = this.userAnswers[currentQuestionId] !== undefined;
         
         if (this.prevBtn) {
@@ -267,9 +308,19 @@ class PollApp {
     }
 
     selectAnswer(answer) {
-        if (!this.questions || this.questions.length === 0) return;
+        // ADD SAFETY CHECK
+        if (!this.questions || this.questions.length === 0 || this.currentQuestionIndex >= this.questions.length) {
+            console.error('Cannot select answer: no questions available');
+            return;
+        }
         
         const question = this.questions[this.currentQuestionIndex];
+        // ADD SAFETY CHECK FOR QUESTION OBJECT
+        if (!question || !question.id) {
+            console.error('Invalid question at index:', this.currentQuestionIndex, question);
+            return;
+        }
+        
         this.userAnswers[question.id] = answer;
         
         this.provideHapticFeedback();
@@ -285,12 +336,36 @@ class PollApp {
     }
 
     nextQuestion() {
-        if (!this.questions || this.questions.length === 0) return;
+        // ADD COMPREHENSIVE SAFETY CHECK
+        if (!this.questions || this.questions.length === 0) {
+            console.error('Cannot navigate: no questions available');
+            return;
+        }
         
-        const currentQuestionId = this.questions[this.currentQuestionIndex].id;
+        if (this.currentQuestionIndex >= this.questions.length) {
+            console.error('Current question index out of bounds:', this.currentQuestionIndex);
+            this.currentQuestionIndex = 0; // Reset to safe value
+            this.displayCurrentQuestion();
+            return;
+        }
+        
+        const currentQuestion = this.questions[this.currentQuestionIndex];
+        // ADD SAFETY CHECK FOR QUESTION OBJECT
+        if (!currentQuestion || !currentQuestion.id) {
+            console.error('Invalid question at index:', this.currentQuestionIndex, currentQuestion);
+            this.currentQuestionIndex = 0; // Reset to safe value
+            this.displayCurrentQuestion();
+            return;
+        }
+        
+        const currentQuestionId = currentQuestion.id;
         
         if (this.userAnswers[currentQuestionId] !== undefined) {
             this.currentQuestionIndex++;
+            // CHECK IF WE'RE STILL WITHIN BOUNDS AFTER INCREMENTING
+            if (this.currentQuestionIndex >= this.questions.length) {
+                this.currentQuestionIndex = this.questions.length - 1; // Stay at last question
+            }
             this.displayCurrentQuestion();
             
             if (!this.isMobile) {
@@ -300,6 +375,7 @@ class PollApp {
     }
 
     previousQuestion() {
+        // ADD SAFETY CHECK
         if (this.currentQuestionIndex > 0) {
             this.currentQuestionIndex--;
             this.displayCurrentQuestion();
@@ -688,7 +764,7 @@ class PollApp {
     }
 }
 
-// Complete Category messages configuration - KEPT THE SAME AS YOUR ORIGINAL
+// Complete Category messages configuration
 const CATEGORY_MESSAGES = [
   {
     "id": "A",
@@ -734,7 +810,53 @@ const CATEGORY_MESSAGES = [
   }
 ];
 
-// Add CSS for mobile-specific layout - KEPT THE SAME AS YOUR ORIGINAL
+// Comprehensive fallback questions
+const FALLBACK_QUESTIONS = [
+  {id: 1, text: "אני לעתים קרובות דואג/ת שבן/בת הזוג שלי יפסיק/ה לאהוב אותי.", category: "A", type: "yesno"},
+  {id: 2, text: "אני מוצא/ת שקל לי להיות חיבה כלפי בן/בת הזוג שלי.", category: "B", type: "yesno"},
+  {id: 3, text: "אני חושש/ת שברגע שמישהו/י יכיר את עצמי האמיתי/ת, הוא/היא לא יאהב/ה אותי.", category: "A", type: "yesno"},
+  {id: 4, text: "אני מוצא/ת שאני מתאושש/ת מהר אחרי פרידה – זה מוזר איך אני יכול/ה פשוט להוציא מישהו/י מהראש שלי.", category: "C", type: "yesno"},
+  {id: 5, text: "כשאני לא במערכת יחסים, אני מרגיש/ה קצת חרד/ת ולא שלם/ה.", category: "A", type: "yesno"},
+  {id: 6, text: "אני מוצא/ת שקשה לי לתמוך רגשית בבן/בת הזוג שלי כשהוא/היא מדוכא/ת.", category: "C", type: "yesno"},
+  {id: 7, text: "כשבן/בת הזוג שלי רחוק/ה, אני חושש/ת שהוא/היא עלול/ה להתעניין במישהו/י אחר/ת.", category: "A", type: "yesno"},
+  {id: 8, text: "אני מרגיש/ה בנוח להיות תלוי/ה בבני זוג רומנטיים.", category: "B", type: "yesno"},
+  {id: 9, text: "העצמאות שלי חשובה לי יותר ממערכות היחסים שלי.", category: "C", type: "yesno"},
+  {id: 10, text: "אני מעדיף/ה לא לשתף את בן/בת הזוג שלי ברגשותיי הפנימיים ביותר.", category: "C", type: "yesno"},
+  {id: 11, text: "כשאני מראה/ה לבן/בת הזוג שלי איך אני מרגיש/ה, אני חושש/ת שהוא/היא לא ירגיש/ה אותו דבר כלפיי.", category: "A", type: "yesno"},
+  {id: 12, text: "אני בדרך כלל מרוצה/ת ממערכות היחסים הרומנטיות שלי.", category: "B", type: "yesno"},
+  {id: 13, text: "אני לא מרגיש/ה צורך להתנהג בצורה יוצאת דופן במערכות היחסים הרומנטיות שלי.", category: "B", type: "yesno"},
+  {id: 14, text: "אני חושב/ת הרבה על מערכות היחסים שלי.", category: "A", type: "yesno"},
+  {id: 15, text: "אני מתקשה להיות תלוי/ה בבני/בנות זוג רומנטיים.", category: "C", type: "yesno"},
+  {id: 16, text: "אני נוטה להיקשר מהר מאוד לבן/בת זוג רומנטי/ת.", category: "A", type: "yesno"},
+  {id: 17, text: "יש לי מעט קושי לבטא את הצרכים והרצונות שלי לבן/בת הזוג שלי.", category: "C", type: "yesno"},
+  {id: 18, text: "לפעמים אני מרגיש/ה כועס/ת או מוטרד/ת על בן/בת הזוג שלי בלי לדעת למה.", category: "A", type: "yesno"},
+  {id: 19, text: "אני מאוד רגיש/ה למצבי הרוח של בן/בת הזוג שלי.", category: "A", type: "yesno"},
+  {id: 20, text: "אני מאמין/ה שרוב האנשים הם במהותם כנים ואמינים.", category: "B", type: "yesno"},
+  {id: 21, text: "אני מעדיף/ה סקס מזדמן עם בני זוג לא מחויבים על פני סקס אינטימי עם אדם אחד.", category: "C", type: "yesno"},
+  {id: 22, text: "אני מרגיש/ה בנוח לשתף את המחשבות והרגשות האישיים שלי עם בן/בת הזוג שלי.", category: "B", type: "yesno"},
+  {id: 23, text: "אני דואג/ת שאם מישהו/י יעזוב אותי, לעולם לא אמצא מישהו/י אחר/ת.", category: "A", type: "yesno"},
+  {id: 24, text: "זה גורם לי להתעצבן כשבן/בת הזוג שלי נהיה/ית כל כך רגיש/ה.", category: "C", type: "yesno"},
+  {id: 25, text: "במהלך קונפליקט, אני נוטה להתעלם מהנושאים שלי בצורה רפויה, במקום להתמודד איתם ישירות.", category: "C", type: "yesno"},
+  {id: 26, text: "ויכוח עם בן/בת הזוג שלי בדרך כלל לא גורם לי להטיל ספק בכל מערכת היחסים שלנו.", category: "B", type: "yesno"},
+  {id: 27, text: "בני הזוג שלי רוצים לעתים קרובות שאהיה יותר אינטימי/ת ממה שנוח לי להיות.", category: "C", type: "yesno"},
+  {id: 28, text: "אני דואג/ת שאני לא מספיק מושך/ת.", category: "A", type: "yesno"},
+  {id: 29, text: "לפעמים אנשים רואים אותי משעמם/ת כי אני יוצר/ת מעט דרמה במערכות יחסים.", category: "B", type: "yesno"},
+  {id: 30, text: "אני מתגעגע/ת לבן/בת הזוג שלי כשאנחנו נפרדים, אבל כשאנחנו ביחד אני מרגיש/ה צורך לברוח.", category: "C", type: "yesno"},
+  {id: 31, text: "כשאני לא מסכים/ה עם מישהו/י, אני מרגיש/ה בנוח להביע את דעותיי.", category: "B", type: "yesno"},
+  {id: 32, text: "אני שונא/ת להרגיש שאנשים אחרים תלויים בי.", category: "C", type: "yesno"},
+  {id: 33, text: "אם אני שם/ה לב שמישהו/י שאני מעוניין/ת בו/ה בודק/ת אנשים אחרים, אני לא נותן/ת לזה להטריד אותי – אולי ארגיש צביטה של קנאה, אבל היא חולפת.", category: "B", type: "yesno"},
+  {id: 34, text: "אם אני שם/ה לב שמישהו/י שאני מעוניין/ת בו/ה בודק/ת אנשים אחרים, אני מרגיש/ה הקלה – זה אומר שהוא/היא לא מחפש/ת להפוך את הדברים לאקסקלוסיביים.", category: "C", type: "yesno"},
+  {id: 35, text: "אם אני שם/ה לב שמישהו/י שאני מעוניין/ת בו/ה בודק/ת אנשים אחרים, זה גורם לי להרגיש מדוכא/ת.", category: "A", type: "yesno"},
+  {id: 36, text: "אם מישהו/י שיצאתי איתו/ה מתחיל/ה להתנהג בקרירות ובמרחק, אני אולי תוהה מה קרה, אבל אדע שזה כנראה לא קשור אליי.", category: "B", type: "yesno"},
+  {id: 37, text: "אם מישהו/י שיצאתי איתו/ה מתחיל/ה להתנהג בקרירות ובמרחק, כנראה אהיה אדיש/ה – אולי אפילו ארגיש הקלה.", category: "C", type: "yesno"},
+  {id: 38, text: "אם מישהו/י שיצאתי איתו/ה מתחיל/ה להתנהג בקרירות ובמרחק, אדאג שעשיתי משהו לא בסדר.", category: "A", type: "yesno"},
+  {id: 39, text: "אם בן/בת זוגי היה/תה נפרד/ת ממני, הייתי מנסה להראות לו/ה מה הוא/היא מפספס/ת (קצת קנאה לא תזיק).", category: "A", type: "yesno"},
+  {id: 40, text: "אם מישהו/י שיצאתי איתו/ה כבר כמה חודשים אומר/ת שהוא/היא רוצה להפסיק להיפגש איתי, הייתי מרגיש/ה פגוע/ה בהתחלה, אבל הייתי מתגבר/ת על זה.", category: "B", type: "yesno"},
+  {id: 41, text: "לפעמים כשאני מקבל/ת את מה שאני רוצה במערכת יחסים, אני כבר לא בטוח/ה מה אני רוצה.", category: "C", type: "yesno"},
+  {id: 42, text: "לא תהיה לי בעיה לשמור על קשר עם האקס שלי (אפלטוני לחלוטין) – אחרי הכול, יש לנו הרבה במשותף.", category: "B", type: "yesno"}
+];
+
+// Add CSS for mobile-specific layout
 const mobileStyles = `
     .mobile-mode .answer-options {
         gap: 15px;
@@ -767,20 +889,22 @@ const mobileStyles = `
     }
 `;
 
-// Inject mobile styles - KEPT THE SAME AS YOUR ORIGINAL
+// Inject mobile styles
 const styleSheet = document.createElement('style');
 styleSheet.textContent = mobileStyles;
 document.head.appendChild(styleSheet);
 
-// Initialize the app when DOM is loaded and content is ready - MODIFIED
+// Initialize the app when DOM is loaded and content is ready
 function initializeAppWhenReady() {
+    console.log('DOM loaded, checking for survey data...');
     if (window.surveyData) {
+        console.log('Survey data found, initializing app...');
         new PollApp();
     } else {
+        console.log('Survey data not ready, waiting...');
         // Wait for content to be loaded
         setTimeout(initializeAppWhenReady, 100);
     }
 }
 
-// KEPT THE SAME EVENT LISTENER BUT WITH NEW INITIALIZATION FUNCTION
 document.addEventListener('DOMContentLoaded', initializeAppWhenReady);
