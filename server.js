@@ -77,72 +77,6 @@ async function savePollData(pollData) {
   }
 }
 
-// Calculate aggregate statistics
-function calculateAggregateStats(responses) {
-  const categoryScores = {
-    "A": { yes: 0, no: 0, total: 0 },
-    "B": { yes: 0, no: 0, total: 0 },
-    "C": { yes: 0, no: 0, total: 0 }
-  };
-
-  const questionStats = {};
-
-  responses.forEach(response => {
-    response.answers.forEach(answer => {
-      const category = answer.category;
-      const questionId = answer.questionId;
-      
-      // Initialize question stats if not exists
-      if (!questionStats[questionId]) {
-        questionStats[questionId] = {
-          yes: 0, no: 0, total: 0,
-          text: answer.questionText,
-          category: category
-        };
-      }
-      
-      // Update category stats
-      if (categoryScores[category]) {
-        categoryScores[category].total++;
-        if (answer.answer === 'yes') {
-          categoryScores[category].yes++;
-          questionStats[questionId].yes++;
-        } else if (answer.answer === 'no') {
-          categoryScores[category].no++;
-          questionStats[questionId].no++;
-        }
-        questionStats[questionId].total++;
-      }
-    });
-  });
-
-  return { categoryScores, questionStats };
-}
-
-// Calculate user's dominant category
-function calculateUserDominantCategory(userAnswers) {
-  const userScores = { A: 0, B: 0, C: 0 };
-  
-  userAnswers.forEach(answer => {
-    if (answer.answer === 'yes') {
-      userScores[answer.category]++;
-    }
-  });
-  
-  const maxScore = Math.max(userScores.A, userScores.B, userScores.C);
-  const dominantCategories = [];
-  
-  if (userScores.A === maxScore) dominantCategories.push('A');
-  if (userScores.B === maxScore) dominantCategories.push('B');
-  if (userScores.C === maxScore) dominantCategories.push('C');
-  
-  return {
-    scores: userScores,
-    dominant: dominantCategories,
-    maxScore: maxScore
-  };
-}
-
 // Middleware to verify admin authentication
 function verifyAdmin(req, res, next) {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -164,6 +98,8 @@ function verifyAdmin(req, res, next) {
 app.use(cors());
 app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Serve static files from public directory ONLY
 app.use(express.static('public'));
 
 // API Routes
@@ -181,13 +117,11 @@ app.get('/api/health', (req, res) => {
 app.get('/api/poll', async (req, res) => {
   try {
     const pollData = await loadPollData();
-    const stats = calculateAggregateStats(pollData.responses);
     
     res.json({
       questions: QUESTIONS,
       summary: {
         totalSubmissions: pollData.responses.length,
-        categoryScores: stats.categoryScores,
         lastUpdated: pollData.lastUpdated
       }
     });
@@ -217,12 +151,7 @@ app.post('/api/vote', async (req, res) => {
         email: userInfo?.email || '',
         submittedAt: new Date().toISOString()
       },
-      answers: answers,
-      // Store raw data for analytics
-      rawData: {
-        categoryScores: calculateUserDominantCategory(answers).scores,
-        totalQuestions: answers.length
-      }
+      answers: answers
     };
     
     // Add to database
@@ -237,14 +166,21 @@ app.post('/api/vote', async (req, res) => {
     }
 
     // Calculate results for this user
-    const userDominant = calculateUserDominantCategory(answers);
-    const aggregateStats = calculateAggregateStats(pollData.responses);
+    const userScores = { A: 0, B: 0, C: 0 };
+    answers.forEach(answer => {
+      if (answer.answer === 'yes') {
+        userScores[answer.category]++;
+      }
+    });
+
+    const maxScore = Math.max(userScores.A, userScores.B, userScores.C);
+    const dominantCategories = [];
+    if (userScores.A === maxScore) dominantCategories.push('A');
+    if (userScores.B === maxScore) dominantCategories.push('B');
+    if (userScores.C === maxScore) dominantCategories.push('C');
 
     console.log(`📊 New submission #${newResponse.id}`);
     console.log(`   User: ${newResponse.userInfo.name}`);
-    console.log(`   Dominant: ${userDominant.dominant.join(', ')}`);
-    console.log(`   Scores - A:${userDominant.scores.A} B:${userDominant.scores.B} C:${userDominant.scores.C}`);
-    console.log(`   Total submissions: ${pollData.responses.length}`);
 
     res.json({ 
       success: true, 
@@ -253,12 +189,14 @@ app.post('/api/vote', async (req, res) => {
       results: {
         summary: {
           totalSubmissions: pollData.responses.length,
-          categoryScores: aggregateStats.categoryScores,
           yourSubmission: `#${newResponse.id}`,
           lastUpdated: pollData.lastUpdated
         },
         yourAnswers: answers,
-        dominantCategory: userDominant
+        dominantCategory: {
+          dominant: dominantCategories,
+          scores: userScores
+        }
       }
     });
 
@@ -343,109 +281,7 @@ app.post('/api/admin/save-content', verifyAdmin, async (req, res) => {
 
 // Serve admin page - ONLY for /admin route
 app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
-});
-
-// Get all submissions (for admin/analytics)
-app.get('/api/submissions', async (req, res) => {
-  try {
-    const pollData = await loadPollData();
-    
-    // Return basic submission info (without full answers for privacy)
-    const submissions = pollData.responses.map(r => ({
-      id: r.id,
-      timestamp: r.timestamp,
-      userInfo: { name: r.userInfo.name },
-      dominantCategory: calculateUserDominantCategory(r.answers),
-      totalAnswers: r.answers.length
-    }));
-    
-    res.json({
-      total: submissions.length,
-      submissions: submissions
-    });
-  } catch (error) {
-    console.error('Error fetching submissions:', error);
-    res.status(500).json({ error: 'Failed to fetch submissions' });
-  }
-});
-
-// Get detailed analytics
-app.get('/api/analytics', async (req, res) => {
-  try {
-    const pollData = await loadPollData();
-    const stats = calculateAggregateStats(pollData.responses);
-    
-    // Calculate percentages
-    Object.keys(stats.categoryScores).forEach(category => {
-      const cat = stats.categoryScores[category];
-      cat.yesPercentage = cat.total > 0 ? Number(((cat.yes / cat.total) * 100).toFixed(1)) : 0;
-      cat.noPercentage = cat.total > 0 ? Number(((cat.no / cat.total) * 100).toFixed(1)) : 0;
-    });
-    
-    // Calculate question statistics
-    const questionAnalytics = Object.entries(stats.questionStats).map(([id, data]) => ({
-      id: parseInt(id),
-      text: data.text,
-      category: data.category,
-      yes: data.yes,
-      no: data.no,
-      total: data.total,
-      yesPercentage: data.total > 0 ? Number(((data.yes / data.total) * 100).toFixed(1)) : 0,
-      noPercentage: data.total > 0 ? Number(((data.no / data.total) * 100).toFixed(1)) : 0
-    }));
-    
-    res.json({
-      totalSubmissions: pollData.responses.length,
-      categoryScores: stats.categoryScores,
-      questionAnalytics: questionAnalytics,
-      timeRange: {
-        firstSubmission: pollData.responses[0]?.timestamp,
-        lastSubmission: pollData.lastUpdated
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching analytics:', error);
-    res.status(500).json({ error: 'Failed to fetch analytics' });
-  }
-});
-
-// Export data (for backup)
-app.get('/api/export', async (req, res) => {
-  try {
-    const pollData = await loadPollData();
-    
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', 'attachment; filename="poll-data-backup.json"');
-    res.json(pollData);
-  } catch (error) {
-    console.error('Error exporting data:', error);
-    res.status(500).json({ error: 'Failed to export data' });
-  }
-});
-
-// Reset database (careful!)
-app.post('/api/reset', async (req, res) => {
-  try {
-    const newData = {
-      questions: QUESTIONS,
-      responses: [],
-      totalSubmissions: 0,
-      createdAt: new Date().toISOString(),
-      lastUpdated: new Date().toISOString()
-    };
-    
-    await savePollData(newData);
-    
-    res.json({ 
-      success: true, 
-      message: 'Database reset successfully',
-      deletedSubmissions: newData.responses.length
-    });
-  } catch (error) {
-    console.error('Error resetting database:', error);
-    res.status(500).json({ error: 'Failed to reset database' });
-  }
+    res.sendFile(path.join(__dirname, 'admin', 'admin.html'));
 });
 
 // SPA fallback - Serve main app for all other routes
@@ -461,9 +297,6 @@ async function startServer() {
   console.log('\n📊 Attachment Style Survey Server Started');
   console.log(`   Total Questions: ${QUESTIONS.length}`);
   console.log(`   Total Submissions: ${pollData.responses.length}`);
-  console.log(`   Database: ${DB_PATH}`);
-  console.log(`   First submission: ${pollData.responses[0]?.timestamp || 'None'}`);
-  console.log(`   Last updated: ${pollData.lastUpdated}`);
   console.log(`   Admin password set: ${ADMIN_PASSWORD ? 'Yes' : 'No'}`);
 
   app.listen(PORT, '0.0.0.0', () => {
@@ -471,7 +304,6 @@ async function startServer() {
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`📊 Main App: http://localhost:${PORT}`);
     console.log(`🔧 Admin Panel: http://localhost:${PORT}/admin`);
-    console.log(`📈 Analytics: http://localhost:${PORT}/api/analytics\n`);
   });
 }
 
