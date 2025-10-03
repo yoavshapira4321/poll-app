@@ -10,6 +10,103 @@ const PORT = process.env.PORT || 3000;
 // Database file path
 const DB_PATH = path.join(__dirname, 'poll-data.json');
 
+// Add these routes to your server.js file
+
+// Admin password (change this to your desired password)
+const ADMIN_PASSWORD = "survey2024"; // CHANGE THIS PASSWORD!
+const JWT_SECRET = "tawj5}{9s7_e{$oF"; // Change this too!
+
+const jwt = require('jsonwebtoken');
+
+// Middleware to verify admin authentication
+function verifyAdmin(req, res, next) {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.admin = decoded;
+        next();
+    } catch (error) {
+        res.status(401).json({ error: 'Invalid token' });
+    }
+}
+
+// Admin login route
+app.post('/api/admin/login', (req, res) => {
+    const { password } = req.body;
+    
+    if (!password) {
+        return res.status(400).json({ error: 'Password is required' });
+    }
+    
+    if (password === ADMIN_PASSWORD) {
+        const token = jwt.sign(
+            { admin: true, timestamp: Date.now() },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+        
+        res.json({ 
+            success: true, 
+            token,
+            message: 'Login successful' 
+        });
+    } else {
+        res.status(401).json({ 
+            success: false, 
+            error: 'Invalid password' 
+        });
+    }
+});
+
+// Verify token route
+app.get('/api/admin/verify', verifyAdmin, (req, res) => {
+    res.json({ success: true, message: 'Token is valid' });
+});
+
+// Get content for admin (protected)
+app.get('/api/admin/content', verifyAdmin, async (req, res) => {
+    try {
+        const contentPath = path.join(__dirname, 'public', 'content.json');
+        const data = await fs.readFile(contentPath, 'utf8');
+        res.json(JSON.parse(data));
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to load content' });
+    }
+});
+
+// Save content (protected)
+app.post('/api/admin/save-content', verifyAdmin, async (req, res) => {
+    try {
+        const newContent = req.body;
+        
+        // Validate the content structure
+        if (!newContent.ui || !newContent.questions) {
+            return res.status(400).json({ error: 'Invalid content structure' });
+        }
+
+        // Save to content.json
+        const contentPath = path.join(__dirname, 'public', 'content.json');
+        await fs.writeFile(contentPath, JSON.stringify(newContent, null, 2));
+        
+        console.log('📝 Content updated via admin interface');
+        res.json({ success: true, message: 'Content saved successfully' });
+        
+    } catch (error) {
+        console.error('Error saving content:', error);
+        res.status(500).json({ error: 'Failed to save content' });
+    }
+});
+
+// Serve admin page
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
 // Load content from content.json for questions
 let QUESTIONS = [];
 
