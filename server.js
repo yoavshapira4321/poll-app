@@ -341,7 +341,7 @@ app.post('/api/admin/save-content', verifyAdmin, async (req, res) => {
     }
 });
 
-// Serve admin page
+// Serve admin page - ONLY for /admin route
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'admin.html'));
 });
@@ -448,7 +448,7 @@ app.post('/api/reset', async (req, res) => {
   }
 });
 
-// SPA fallback
+// SPA fallback - Serve main app for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
