@@ -3,51 +3,6 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
-// Category messages configuration
-const CATEGORY_MESSAGES = [
-  {
-    "id": "A",
-    "style": "חרד",
-    "title": "A דומיננטי – חרד",
-    "message": "נראה שסגנון ההתקשרות החרד בולט אצלך. אתה נוטה להשקיע הרבה רגש במערכות יחסים ולעיתים קרובות חושש לאבד את הקרבה עם בן/בת הזוג. הרגישות שלך יכולה לסייע לך לקלוט שינויים במצב הרוח של האחר, אך לעיתים היא מובילה לדאגות מיותרות. עבודה על ביטחון עצמי ובניית אמון הדדי תסייע לך להרגיש רגוע ויציב יותר במערכות יחסים."
-  },
-  {
-    "id": "B",
-    "style": "בטוח",
-    "title": "B דומיננטי – בטוח",
-    "message": "סגנון ההתקשרות הבטוח דומיננטי אצלך. יש לך יכולת טבעית ליצור קרבה וחום במערכות יחסים, ואתה נוטה לשמור על איזון רגשי גם במצבי לחץ. אתה מסוגל לבטא את רגשותיך ולתמוך בבן/בת הזוג בפתיחות. זהו בסיס מצוין להמשך קשרים בריאים ומספקים."
-  },
-  {
-    "id": "C",
-    "style": "נמנע",
-    "title": "C דומיננטי – נמנע",
-    "message": "נראה שסגנון ההתקשרות הנמנע דומיננטי אצלך. אתה מעריך מאוד את העצמאות שלך ולעיתים מתקשה להרגיש בנוח עם קרבה רגשית עמוקה. ייתכן שאתה שומר מרחק כדי להגן על עצמך, אך זה עלול להקשות על חוויית אינטימיות במערכת היחסים. למידה לשתף יותר את עולמך הפנימי יכולה להעשיר את מערכות היחסים שלך."
-  },
-  {
-    "id": "AB",
-    "style": "חרד-בטוח",
-    "title": "A–B דומיננטיים – חרד ובטוח (תיקו)",
-    "message": "יש לך שילוב בין מאפייני סגנון חרד לסגנון בטוח. אתה מעריך קרבה רגשית ומודע לצרכים שלך ושל האחרים, אך לעיתים עולה חשש או חוסר ביטחון בנוגע ליציבות הקשר. טיפוח הביטחון העצמי ושמירה על תקשורת פתוחה יכולים לעזור לך להטות את הכף לכיוון סגנון בטוח יותר."
-  },
-  {
-    "id": "AC",
-    "style": "חרד-נמנע",
-    "title": "A–C דומיננטיים – חרד ונמנע (תיקו)",
-    "message": "אצלך מופיעים גם מאפיינים חרדתיים וגם מאפיינים נמנעים – שילוב שיכול ליצור מתח פנימי בין הרצון בקרבה לצורך לשמור מרחק. לעיתים אתה עשוי לחוות בלבול במערכות יחסים ולשלוח מסרים מעורבים. מודעות לדפוס זה ועבודה על ויסות רגשי ותקשורת ברורה עם בן/בת הזוג יכולים להביא לשיפור בתחושת הביטחון בקשר."
-  },
-  {
-    "id": "BC",
-    "style": "בטוח-נמנע",
-    "title": "B–C דומיננטיים – בטוח ונמנע (תיקו)",
-    "message": "נראה שאתה מאזן בין הצורך בעצמאות ובקרבה. לרוב אתה מרגיש בטוח בקשרים אך לעיתים יש נטייה לשמור על גבולות ברורים מדי ולצמצם אינטימיות. טיפוח נכונות לשתף רגשות ולשמור על גמישות רגשית יחזק את האמון ואת הקרבה עם בן/בת הזוג."
-  },
-  {
-    "id": "ABC",
-    "style": "מעורב",
-    "title": "A–B–C מאוזנים – תיקו משולש",
-    "message": "אין סגנון התקשרות אחד שמוביל בבירור אצלך – אתה מגלה חלקים חרדתיים, בטוחים ונמנעים במינונים דומים. המשמעות היא שהתגובות שלך במערכות יחסים עשויות להשתנות לפי נסיבות, בן/בת הזוג והקשר הספציפי. פיתוח מודעות עצמית ועקביות בתקשורת ובגבולות יכול לסייע לך לבחור את ההתנהלות שמקדמת מערכות יחסים יציבות ובריאות."
-  }
-];
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -55,74 +10,42 @@ const PORT = process.env.PORT || 3000;
 // Database file path
 const DB_PATH = path.join(__dirname, 'poll-data.json');
 
-// Complete questions organized by category
-const QUESTIONS = [
-  { id: 1, text: "אני לעתים קרובות דואג/ת שבן/בת הזוג שלי יפסיק/ה לאהוב אותי.", category: "A", type: "yesno" },
-  { id: 2, text: "אני מוצא/ת שקל לי להיות חיבה כלפי בן/בת הזוג שלי.", category: "B", type: "yesno" },
-  { id: 3, text: "אני חושש/ת שברגע שמישהו/י יכיר את עצמי האמיתי/ת, הוא/היא לא יאהב/ה אותי.", category: "A", type: "yesno" },
-  { id: 4, text: "אני מוצא/ת שאני מתאושש/ת מהר אחרי פרידה – זה מוזר איך אני יכול/ה פשוט להוציא מישהו/י מהראש שלי.", category: "C", type: "yesno" },
-  { id: 5, text: "כשאני לא במערכת יחסים, אני מרגיש/ה קצת חרד/ת ולא שלם/ה.", category: "A", type: "yesno" },
-  { id: 6, text: "אני מוצא/ת שקשה לי לתמוך רגשית בבן/בת הזוג שלי כשהוא/היא מדוכא/ת.", category: "C", type: "yesno" },
-  { id: 7, text: "כשבן/בת הזוג שלי רחוק/ה, אני חושש/ת שהוא/היא עלול/ה להתעניין במישהו/י אחר/ת.", category: "A", type: "yesno" },
-  { id: 8, text: "אני מרגיש/ה בנוח להיות תלוי/ה בבני זוג רומנטיים.", category: "B", type: "yesno" },
-  { id: 9, text: "העצמאות שלי חשובה לי יותר ממערכות היחסים שלי.", category: "C", type: "yesno" },
-  { id: 10, text: "אני מעדיף/ה לא לשתף את בן/בת הזוג שלי ברגשותיי הפנימיים ביותר.", category: "C", type: "yesno" },
-  { id: 11, text: "כשאני מראה/ה לבן/בת הזוג שלי איך אני מרגיש/ה, אני חושש/ת שהוא/היא לא ירגיש/ה אותו דבר כלפיי.", category: "A", type: "yesno" },
-  { id: 12, text: "אני בדרך כלל מרוצה/ת ממערכות היחסים הרומנטיות שלי.", category: "B", type: "yesno" },
-  { id: 13, text: "אני לא מרגיש/ה צורך להתנהג בצורה יוצאת דופן במערכות היחסים הרומנטיות שלי.", category: "B", type: "yesno" },
-  { id: 14, text: "אני חושב/ת הרבה על מערכות היחסים שלי.", category: "A", type: "yesno" },
-  { id: 15, text: "אני מתקשה להיות תלוי/ה בבני/בנות זוג רומנטיים.", category: "C", type: "yesno" },
-  { id: 16, text: "אני נוטה להיקשר מהר מאוד לבן/בת זוג רומנטי/ת.", category: "A", type: "yesno" },
-  { id: 17, text: "יש לי מעט קושי לבטא את הצרכים והרצונות שלי לבן/בת הזוג שלי.", category: "C", type: "yesno" },
-  { id: 18, text: "לפעמים אני מרגיש/ה כועס/ת או מוטרד/ת על בן/בת הזוג שלי בלי לדעת למה.", category: "A", type: "yesno" },
-  { id: 19, text: "אני מאוד רגיש/ה למצבי הרוח של בן/בת הזוג שלי.", category: "A", type: "yesno" },
-  { id: 20, text: "אני מאמין/ה שרוב האנשים הם במהותם כנים ואמינים.", category: "B", type: "yesno" },
-  { id: 21, text: "אני מעדיף/ה סקס מזדמן עם בני זוג לא מחויבים על פני סקס אינטימי עם אדם אחד.", category: "C", type: "yesno" },
-  { id: 22, text: "אני מרגיש/ה בנוח לשתף את המחשבות והרגשות האישיים שלי עם בן/בת הזוג שלי.", category: "B", type: "yesno" },
-  { id: 23, text: "אני דואג/ת שאם מישהו/י יעזוב אותי, לעולם לא אמצא מישהו/י אחר/ת.", category: "A", type: "yesno" },
-  { id: 24, text: "זה גורם לי להתעצבן כשבן/בת הזוג שלי נהיה/ית כל כך רגיש/ה.", category: "C", type: "yesno" },
-  { id: 25, text: "במהלך קונפליקט, אני נוטה להתעלם מהנושאים שלי בצורה רפויה, במקום להתמודד איתם ישירות.", category: "C", type: "yesno" },
-  { id: 26, text: "ויכוח עם בן/בת הזוג שלי בדרך כלל לא גורם לי להטיל ספק בכל מערכת היחסים שלנו.", category: "B", type: "yesno" },
-  { id: 27, text: "בני הזוג שלי רוצים לעתים קרובות שאהיה יותר אינטימי/ת ממה שנוח לי להיות.", category: "C", type: "yesno" },
-  { id: 28, text: "אני דואג/ת שאני לא מספיק מושך/ת.", category: "A", type: "yesno" },
-  { id: 29, text: "לפעמים אנשים רואים אותי משעמם/ת כי אני יוצר/ת מעט דרמה במערכות יחסים.", category: "B", type: "yesno" },
-  { id: 30, text: "אני מתגעגע/ת לבן/בת הזוג שלי כשאנחנו נפרדים, אבל כשאנחנו ביחד אני מרגיש/ה צורך לברוח.", category: "C", type: "yesno" },
-  { id: 31, text: "כשאני לא מסכים/ה עם מישהו/י, אני מרגיש/ה בנוח להביע את דעותיי.", category: "B", type: "yesno" },
-  { id: 32, text: "אני שונא/ת להרגיש שאנשים אחרים תלויים בי.", category: "C", type: "yesno" },
-  { id: 33, text: "אם אני שם/ה לב שמישהו/י שאני מעוניין/ת בו/ה בודק/ת אנשים אחרים, אני לא נותן/ת לזה להטריד אותי – אולי ארגיש צביטה של קנאה, אבל היא חולפת.", category: "B", type: "yesno" },
-  { id: 34, text: "אם אני שם/ה לב שמישהו/י שאני מעוניין/ת בו/ה בודק/ת אנשים אחרים, אני מרגיש/ה הקלה – זה אומר שהוא/היא לא מחפש/ת להפוך את הדברים לאקסקלוסיביים.", category: "C", type: "yesno" },
-  { id: 35, text: "אם אני שם/ה לב שמישהו/י שאני מעוניין/ת בו/ה בודק/ת אנשים אחרים, זה גורם לי להרגיש מדוכא/ת.", category: "A", type: "yesno" },
-  { id: 36, text: "אם מישהו/י שיצאתי איתו/ה מתחיל/ה להתנהג בקרירות ובמרחק, אני אולי תוהה מה קרה, אבל אדע שזה כנראה לא קשור אליי.", category: "B", type: "yesno" },
-  { id: 37, text: "אם מישהו/י שיצאתי איתו/ה מתחיל/ה להתנהג בקרירות ובמרחק, כנראה אהיה אדיש/ה – אולי אפילו ארגיש הקלה.", category: "C", type: "yesno" },
-  { id: 38, text: "אם מישהו/י שיצאתי איתו/ה מתחיל/ה להתנהג בקרירות ובמרחק, אדאג שעשיתי משהו לא בסדר.", category: "A", type: "yesno" },
-  { id: 39, text: "אם בן/בת זוגי היה/תה נפרד/ת ממני, הייתי מנסה להראות לו/ה מה הוא/היא מפספס/ת (קצת קנאה לא תזיק).", category: "A", type: "yesno" },
-  { id: 40, text: "אם מישהו/י שיצאתי איתו/ה כבר כמה חודשים אומר/ת שהוא/היא רוצה להפסיק להיפגש איתי, הייתי מרגיש/ה פגוע/ה בהתחלה, אבל הייתי מתגבר/ת על זה.", category: "B", type: "yesno" },
-  { id: 41, text: "לפעמים כשאני מקבל/ת את מה שאני רוצה במערכת יחסים, אני כבר לא בטוח/ה מה אני רוצה.", category: "C", type: "yesno" },
-  { id: 42, text: "לא תהיה לי בעיה לשמור על קשר עם האקס שלי (אפלטוני לחלוטין) – אחרי הכול, יש לנו הרבה במשותף.", category: "B", type: "yesno" }
-]
-
-
-// Default poll structure
-const DEFAULT_POLL = {
-  questions: QUESTIONS,
-  responses: [],
-  categoryScores: {
-    "A": { yes: 0, no: 0, total: 0 },
-    "B": { yes: 0, no: 0, total: 0 },
-    "C": { yes: 0, no: 0, total: 0 }
-  },
-  totalResponses: 0,
-  lastUpdated: new Date().toISOString()
-};
+// Load content from content.json for questions
+let QUESTIONS = [];
 
 // Initialize database file
 async function initializeDatabase() {
   try {
-    await fs.access(DB_PATH);
-    console.log('📁 Database file exists');
+    // Load questions from content.json
+    try {
+      const contentData = await fs.readFile(path.join(__dirname, 'public', 'content.json'), 'utf8');
+      const content = JSON.parse(contentData);
+      QUESTIONS = content.questions || [];
+      console.log('✅ Loaded questions from content.json');
+    } catch (error) {
+      console.log('❌ Could not load content.json, using empty questions array');
+      QUESTIONS = [];
+    }
+
+    // Initialize or load poll database
+    try {
+      await fs.access(DB_PATH);
+      const existingData = await loadPollData();
+      console.log('📁 Existing database loaded');
+      console.log(`   Total submissions: ${existingData.responses.length}`);
+    } catch (error) {
+      console.log('📁 Creating new database file...');
+      const initialData = {
+        questions: QUESTIONS,
+        responses: [],
+        totalSubmissions: 0,
+        createdAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString()
+      };
+      await savePollData(initialData);
+    }
   } catch (error) {
-    console.log('📁 Creating new database file...');
-    await savePollData(DEFAULT_POLL);
+    console.error('Error initializing database:', error);
   }
 }
 
@@ -133,7 +56,7 @@ async function loadPollData() {
     return JSON.parse(data);
   } catch (error) {
     console.error('Error loading poll data:', error);
-    return DEFAULT_POLL;
+    return { responses: [], totalSubmissions: 0 };
   }
 }
 
@@ -149,50 +72,58 @@ async function savePollData(pollData) {
   }
 }
 
-
-
-// Calculate category scores from responses with reverse scoring
-function calculateCategoryScores(responses) {
+// Calculate aggregate statistics
+function calculateAggregateStats(responses) {
   const categoryScores = {
     "A": { yes: 0, no: 0, total: 0 },
     "B": { yes: 0, no: 0, total: 0 },
     "C": { yes: 0, no: 0, total: 0 }
   };
 
+  const questionStats = {};
+
   responses.forEach(response => {
     response.answers.forEach(answer => {
       const category = answer.category;
+      const questionId = answer.questionId;
+      
+      // Initialize question stats if not exists
+      if (!questionStats[questionId]) {
+        questionStats[questionId] = {
+          yes: 0, no: 0, total: 0,
+          text: answer.questionText,
+          category: category
+        };
+      }
+      
+      // Update category stats
       if (categoryScores[category]) {
         categoryScores[category].total++;
-        
-        // Apply reverse scoring for specific questions
-        let effectiveAnswer = answer.answer;
-        
-        if (effectiveAnswer === 'yes') {
+        if (answer.answer === 'yes') {
           categoryScores[category].yes++;
-        } else if (effectiveAnswer === 'no') {
+          questionStats[questionId].yes++;
+        } else if (answer.answer === 'no') {
           categoryScores[category].no++;
+          questionStats[questionId].no++;
         }
+        questionStats[questionId].total++;
       }
     });
   });
 
-  return categoryScores;
+  return { categoryScores, questionStats };
 }
 
-// Calculate dominant category
-function calculateDominantCategory(categoryScores, userAnswers) {
+// Calculate user's dominant category
+function calculateUserDominantCategory(userAnswers) {
   const userScores = { A: 0, B: 0, C: 0 };
   
   userAnswers.forEach(answer => {
-    let effectiveAnswer = answer.answer;
-
-    if (effectiveAnswer === 'yes') {
+    if (answer.answer === 'yes') {
       userScores[answer.category]++;
     }
   });
   
-  // Find dominant category
   const maxScore = Math.max(userScores.A, userScores.B, userScores.C);
   const dominantCategories = [];
   
@@ -207,23 +138,15 @@ function calculateDominantCategory(categoryScores, userAnswers) {
   };
 }
 
-// Get category descriptions
-function getCategoryDescription(category) {
-  const descriptions = {
-    'A': 'סגנון התקשרות חרד: נטייה לדאגה יתרה במערכות יחסים, חשש מנטישה, וצורך בתשומת לב מתמדת.',
-    'B': 'סגנון התקשרות נמנע: העדפה לעצמאות, קושי בהישענות רגשית, ונכונות נמוכה לחשיפה רגשית.',
-    'C': 'סגנון התקשרות בטוח: נוחות בקרבה רגשית, יכולת לתת אמון, ואיזון בין עצמאות לקרבה.'
-  };
-  return descriptions[category] || 'לא זמין';
-}
-
 // Middleware
-app.use(cors({ origin: true }));
-app.use(bodyParser.json());
+app.use(cors());
+app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
 // API Routes
 
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
@@ -232,28 +155,27 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Get poll questions and current results
+// Get poll questions
 app.get('/api/poll', async (req, res) => {
   try {
     const pollData = await loadPollData();
+    const stats = calculateAggregateStats(pollData.responses);
     
-    const response = {
-      questions: pollData.questions,
+    res.json({
+      questions: QUESTIONS,
       summary: {
-        totalResponses: pollData.totalResponses,
-        categoryScores: pollData.categoryScores,
+        totalSubmissions: pollData.responses.length,
+        categoryScores: stats.categoryScores,
         lastUpdated: pollData.lastUpdated
       }
-    };
-    
-    res.json(response);
+    });
   } catch (error) {
     console.error('Error fetching poll data:', error);
     res.status(500).json({ error: 'Failed to fetch poll data' });
   }
 });
 
-// Submit poll responses
+// Submit poll response
 app.post('/api/vote', async (req, res) => {
   const { answers, userInfo } = req.body;
   
@@ -264,50 +186,57 @@ app.post('/api/vote', async (req, res) => {
   try {
     const pollData = await loadPollData();
     
+    // Create new response
     const newResponse = {
       id: pollData.responses.length + 1,
       timestamp: new Date().toISOString(),
-      userInfo: userInfo || {},
-      answers: answers.map(answer => ({
-        questionId: answer.questionId,
-        questionText: answer.questionText,
-        category: answer.category,
-        answer: answer.answer
-      }))
+      userInfo: {
+        name: userInfo?.name || 'Anonymous',
+        email: userInfo?.email || '',
+        submittedAt: new Date().toISOString()
+      },
+      answers: answers,
+      // Store raw data for analytics
+      rawData: {
+        categoryScores: calculateUserDominantCategory(answers).scores,
+        totalQuestions: answers.length
+      }
     };
     
+    // Add to database
     pollData.responses.push(newResponse);
-    pollData.totalResponses = pollData.responses.length;
-    pollData.categoryScores = calculateCategoryScores(pollData.responses);
+    pollData.totalSubmissions = pollData.responses.length;
     
+    // Save to database
     const saved = await savePollData(pollData);
     
     if (!saved) {
       throw new Error('Failed to save poll data');
     }
 
-    // Calculate user's dominant category
-    const userDominant = calculateDominantCategory(pollData.categoryScores, newResponse.answers);
+    // Calculate results for this user
+    const userDominant = calculateUserDominantCategory(answers);
+    const aggregateStats = calculateAggregateStats(pollData.responses);
 
-    console.log(`📊 New response - Dominant: ${userDominant.dominant.join(', ')}`);
+    console.log(`📊 New submission #${newResponse.id}`);
+    console.log(`   User: ${newResponse.userInfo.name}`);
+    console.log(`   Dominant: ${userDominant.dominant.join(', ')}`);
     console.log(`   Scores - A:${userDominant.scores.A} B:${userDominant.scores.B} C:${userDominant.scores.C}`);
+    console.log(`   Total submissions: ${pollData.responses.length}`);
 
     res.json({ 
       success: true, 
       message: 'Response recorded successfully!',
+      submissionId: newResponse.id,
       results: {
         summary: {
-          totalResponses: pollData.totalResponses,
-          categoryScores: pollData.categoryScores,
+          totalSubmissions: pollData.responses.length,
+          categoryScores: aggregateStats.categoryScores,
+          yourSubmission: `#${newResponse.id}`,
           lastUpdated: pollData.lastUpdated
         },
-        yourAnswers: newResponse.answers,
-        dominantCategory: userDominant,
-        categoryDescriptions: {
-          'A': getCategoryDescription('A'),
-          'B': getCategoryDescription('B'),
-          'C': getCategoryDescription('C')
-        }
+        yourAnswers: answers,
+        dominantCategory: userDominant
       }
     });
 
@@ -317,60 +246,107 @@ app.post('/api/vote', async (req, res) => {
   }
 });
 
-// Get detailed statistics
-app.get('/api/stats', async (req, res) => {
+// Get all submissions (for admin/analytics)
+app.get('/api/submissions', async (req, res) => {
   try {
     const pollData = await loadPollData();
     
-    const questionStats = pollData.questions.map(question => {
-      const questionResponses = pollData.responses.flatMap(response => 
-        response.answers.filter(a => a.questionId === question.id)
-      );
-      
-      const yesCount = questionResponses.filter(a => a.answer === 'yes').length;
-      const noCount = questionResponses.filter(a => a.answer === 'no').length;
-      const total = questionResponses.length;
-      
-      return {
-        ...question,
-        stats: {
-          yes: yesCount,
-          no: noCount,
-          total: total,
-          yesPercentage: total > 0 ? Number(((yesCount / total) * 100).toFixed(1)) : 0,
-          noPercentage: total > 0 ? Number(((noCount / total) * 100).toFixed(1)) : 0
-        }
-      };
-    });
-
+    // Return basic submission info (without full answers for privacy)
+    const submissions = pollData.responses.map(r => ({
+      id: r.id,
+      timestamp: r.timestamp,
+      userInfo: { name: r.userInfo.name },
+      dominantCategory: calculateUserDominantCategory(r.answers),
+      totalAnswers: r.answers.length
+    }));
+    
     res.json({
-      questions: questionStats,
-      categoryScores: pollData.categoryScores,
-      totalResponses: pollData.totalResponses,
-      lastUpdated: pollData.lastUpdated
+      total: submissions.length,
+      submissions: submissions
     });
   } catch (error) {
-    console.error('Error fetching stats:', error);
-    res.status(500).json({ error: 'Failed to fetch statistics' });
+    console.error('Error fetching submissions:', error);
+    res.status(500).json({ error: 'Failed to fetch submissions' });
   }
 });
 
-// Reset poll endpoint
+// Get detailed analytics
+app.get('/api/analytics', async (req, res) => {
+  try {
+    const pollData = await loadPollData();
+    const stats = calculateAggregateStats(pollData.responses);
+    
+    // Calculate percentages
+    Object.keys(stats.categoryScores).forEach(category => {
+      const cat = stats.categoryScores[category];
+      cat.yesPercentage = cat.total > 0 ? Number(((cat.yes / cat.total) * 100).toFixed(1)) : 0;
+      cat.noPercentage = cat.total > 0 ? Number(((cat.no / cat.total) * 100).toFixed(1)) : 0;
+    });
+    
+    // Calculate question statistics
+    const questionAnalytics = Object.entries(stats.questionStats).map(([id, data]) => ({
+      id: parseInt(id),
+      text: data.text,
+      category: data.category,
+      yes: data.yes,
+      no: data.no,
+      total: data.total,
+      yesPercentage: data.total > 0 ? Number(((data.yes / data.total) * 100).toFixed(1)) : 0,
+      noPercentage: data.total > 0 ? Number(((data.no / data.total) * 100).toFixed(1)) : 0
+    }));
+    
+    res.json({
+      totalSubmissions: pollData.responses.length,
+      categoryScores: stats.categoryScores,
+      questionAnalytics: questionAnalytics,
+      timeRange: {
+        firstSubmission: pollData.responses[0]?.timestamp,
+        lastSubmission: pollData.lastUpdated
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
+
+// Export data (for backup)
+app.get('/api/export', async (req, res) => {
+  try {
+    const pollData = await loadPollData();
+    
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename="poll-data-backup.json"');
+    res.json(pollData);
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    res.status(500).json({ error: 'Failed to export data' });
+  }
+});
+
+// Reset database (careful!)
 app.post('/api/reset', async (req, res) => {
   try {
-    await savePollData(DEFAULT_POLL);
+    const newData = {
+      questions: QUESTIONS,
+      responses: [],
+      totalSubmissions: 0,
+      createdAt: new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
+    };
+    
+    await savePollData(newData);
+    
     res.json({ 
       success: true, 
-      message: 'Poll reset successfully'
+      message: 'Database reset successfully',
+      deletedSubmissions: newData.responses.length
     });
   } catch (error) {
-    console.error('Error resetting poll:', error);
-    res.status(500).json({ error: 'Failed to reset poll' });
+    console.error('Error resetting database:', error);
+    res.status(500).json({ error: 'Failed to reset database' });
   }
 });
-
-// Static files
-app.use(express.static('public'));
 
 // SPA fallback
 app.get('*', (req, res) => {
@@ -381,17 +357,19 @@ app.get('*', (req, res) => {
 async function startServer() {
   await initializeDatabase();
   
-  const initialData = await loadPollData();
-  console.log('📊 Attachment Style Survey Initialized');
-  console.log(`   Category A (Anxious): ${QUESTIONS.filter(q => q.category === 'A').length} questions`);
-  console.log(`   Category B (Avoidant): ${QUESTIONS.filter(q => q.category === 'B').length} questions`);
-  console.log(`   Category C (Secure): ${QUESTIONS.filter(q => q.category === 'C').length} questions`);
-  console.log(`   Total questions: ${QUESTIONS.length}`);
-  console.log(`   Total responses: ${initialData.totalResponses}`);
+  const pollData = await loadPollData();
+  console.log('\n📊 Attachment Style Survey Server Started');
+  console.log(`   Total Questions: ${QUESTIONS.length}`);
+  console.log(`   Total Submissions: ${pollData.responses.length}`);
+  console.log(`   Database: ${DB_PATH}`);
+  console.log(`   First submission: ${pollData.responses[0]?.timestamp || 'None'}`);
+  console.log(`   Last updated: ${pollData.lastUpdated}`);
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📈 Analytics: http://localhost:${PORT}/api/analytics`);
+    console.log(`📋 Submissions: http://localhost:${PORT}/api/submissions\n`);
   });
 }
 
