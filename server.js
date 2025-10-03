@@ -102,9 +102,6 @@ const QUESTIONS = [
 ]
 
 
-// Questions that should be reverse scored (where "no" indicates the trait)
-const REVERSE_SCORED_QUESTIONS = [11, 17, 18];
-
 // Default poll structure
 const DEFAULT_POLL = {
   questions: QUESTIONS,
@@ -170,9 +167,6 @@ function calculateCategoryScores(responses) {
         
         // Apply reverse scoring for specific questions
         let effectiveAnswer = answer.answer;
-        if (REVERSE_SCORED_QUESTIONS.includes(answer.questionId)) {
-          effectiveAnswer = answer.answer === 'yes' ? 'no' : 'yes';
-        }
         
         if (effectiveAnswer === 'yes') {
           categoryScores[category].yes++;
@@ -192,12 +186,7 @@ function calculateDominantCategory(categoryScores, userAnswers) {
   
   userAnswers.forEach(answer => {
     let effectiveAnswer = answer.answer;
-    
-    // Apply reverse scoring for specific questions
-    if (REVERSE_SCORED_QUESTIONS.includes(answer.questionId)) {
-      effectiveAnswer = answer.answer === 'yes' ? 'no' : 'yes';
-    }
-    
+
     if (effectiveAnswer === 'yes') {
       userScores[answer.category]++;
     }
@@ -407,43 +396,3 @@ async function startServer() {
 }
 
 startServer().catch(console.error);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
