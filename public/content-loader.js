@@ -2,8 +2,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Content loader started...');
     
-    // Fix the path - go up one level from public/ to get content.json
-    fetch('../content.json')
+    fetch('/api/content')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok: ' + response.status);

@@ -41,6 +41,18 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+app.get('/api/content', async (req, res) => {
+    try {
+        const contentPath = path.join(__dirname, 'runtime-data', 'content.json');
+        const contentData = await fs.readFile(contentPath, 'utf8');
+        const content = JSON.parse(contentData);
+        res.json(content);
+    } catch (error) {
+        console.error('Error loading content:', error);
+        res.status(500).json({ error: 'Failed to load content' });
+    }
+});
+
 // Admin API routes
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body;
@@ -85,7 +97,7 @@ app.get('/api/admin/content', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid token' });
     }
     
-    const contentPath = path.join(__dirname, 'public', 'content.json');
+    const contentPath = path.join(__dirname, 'runtime-data', 'content.json');
     const contentData = await fs.readFile(contentPath, 'utf8');
     const content = JSON.parse(contentData);
     
@@ -109,7 +121,7 @@ app.post('/api/admin/save-content', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid token' });
     }
     
-    const contentPath = path.join(__dirname, 'public', 'content.json');
+    const contentPath = path.join(__dirname, 'runtime-data', 'content.json');
     await fs.writeFile(contentPath, JSON.stringify(req.body, null, 2));
     
     res.json({ success: true, message: 'Content saved successfully' });
@@ -122,7 +134,7 @@ app.post('/api/admin/save-content', async (req, res) => {
 // Poll data routes
 app.get('/api/poll', async (req, res) => {
   try {
-    const contentPath = path.join(__dirname, 'public', 'content.json');
+    const contentPath = path.join(__dirname, 'runtime-data', 'content.json');
     const contentData = await fs.readFile(contentPath, 'utf8');
     const content = JSON.parse(contentData);
     
