@@ -8,21 +8,38 @@
 </head>
 <body>
     <!-- Login Screen -->
-    <div class="login-container" id="loginContainer">
-        <h1>🔒 Admin Access</h1>
-        <p>Enter password to edit survey content</p>
-        
-        <div class="error-message" id="loginError">
-            Invalid password. Please try again.
-        </div>
-        
-        <div class="form-group">
-            <label for="adminPassword">Password:</label>
-            <input type="password" id="adminPassword" placeholder="Enter admin password">
-        </div>
-        
-        <button class="btn-primary" onclick="login()">Login</button>
+<div class="login-container" id="loginContainer">
+    <div class="login-header">
+        <span class="login-icon">🔒</span>
+        <h1>Admin Access</h1>
+        <p>Enter your password to access the survey editor</p>
     </div>
+    
+    <div class="error-message" id="loginError">
+        <strong>Access Denied</strong><br>
+        The password you entered is incorrect. Please try again.
+    </div>
+    
+    <div class="login-form">
+        <div class="form-group">
+            <label for="adminPassword" class="form-label">Administrator Password</label>
+            <div class="password-input-container">
+                <input type="password" id="adminPassword" class="password-input" 
+                       placeholder="Enter your secure password" autocomplete="current-password">
+                <span class="password-icon">🔑</span>
+            </div>
+        </div>
+        
+        <button class="login-btn" onclick="login()">
+            <span class="btn-text">Access Dashboard</span>
+            <span class="spinner"></span>
+        </button>
+    </div>
+    
+    <div class="security-note">
+        Your credentials are encrypted and secure
+    </div>
+</div>
 
     <!-- Admin Interface (hidden until login) -->
     <div class="admin-container" id="adminContainer">
