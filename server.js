@@ -12,6 +12,24 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "survey2024";
 const JWT_SECRET = process.env.JWT_SECRET || "your-jwt-secret-key-here";
 
+const ensureContentFile = async () => {
+    const runtimePath = path.join(__dirname, 'runtime-data', 'content.json');
+    const templatePath = path.join(__dirname, 'public', 'content-template.json');
+    
+    try {
+        await fs.access(runtimePath);
+        console.log('Runtime content exists');
+    } catch (error) {
+        // Copy from template
+        console.log('Creating runtime content from template...');
+        const templateData = await fs.readFile(templatePath, 'utf8');
+        await fs.writeFile(runtimePath, templateData);
+    }
+};
+
+// Call this when server starts
+ensureContentFile();
+
 console.log('🔧 Server starting...');
 console.log('📅 Version:', new Date().toISOString());
 
@@ -252,3 +270,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('🔧 Admin Panel: http://localhost:' + PORT + '/admin');
   console.log('🔍 Check Railway logs for request debugging\n');
 });
+
