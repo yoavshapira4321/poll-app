@@ -19,7 +19,6 @@ class PollApp {
         
         // Single question elements
         this.questionText = document.getElementById('question-text');
-        this.questionCategory = document.getElementById('question-category');
         this.questionCounter = document.getElementById('question-counter');
         this.progressFill = document.getElementById('progress-fill');
         this.progressText = document.getElementById('progress-text');
@@ -208,8 +207,6 @@ class PollApp {
         const totalQuestions = this.questions.length;
         
         this.questionText.textContent = question.text || 'Question text not available';
-        this.questionCategory.textContent = `${this.ui?.categories?.[question.category] || `קטגוריה ${question.category}`}`;
-        this.questionCategory.className = `category-badge ${question.category?.toLowerCase()}-badge` || 'category-badge';
         this.questionCounter.textContent = `${questionNumber}/${totalQuestions}`;
         
         const progress = (questionNumber / totalQuestions) * 100;
