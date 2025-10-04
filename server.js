@@ -12,23 +12,26 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "survey2024";
 const JWT_SECRET = process.env.JWT_SECRET || "your-jwt-secret-key-here";
 
-const ensureContentFile = async () => {
+// NEW: Ensure runtime content exists on server start
+const ensureRuntimeContent = async () => {
     const runtimePath = path.join(__dirname, 'runtime-data', 'content.json');
-    const templatePath = path.join(__dirname, 'public', 'content-template.json');
+    const publicPath = path.join(__dirname, 'public', 'content.json');
     
     try {
         await fs.access(runtimePath);
-        console.log('Runtime content exists');
+        console.log('✅ Runtime content exists');
     } catch (error) {
-        // Copy from template
-        console.log('Creating runtime content from template...');
-        const templateData = await fs.readFile(templatePath, 'utf8');
-        await fs.writeFile(runtimePath, templateData);
+        // Copy from public content to runtime data
+        console.log('📝 Initializing runtime content from public template...');
+        const publicData = await fs.readFile(publicPath, 'utf8');
+        await fs.mkdir(path.dirname(runtimePath), { recursive: true });
+        await fs.writeFile(runtimePath, publicData);
+        console.log('✅ Runtime content created');
     }
 };
 
 // Call this when server starts
-ensureContentFile();
+ensureRuntimeContent();
 
 console.log('🔧 Server starting...');
 console.log('📅 Version:', new Date().toISOString());
@@ -59,6 +62,7 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// NEW: Frontend content API (serves from runtime-data)
 app.get('/api/content', async (req, res) => {
     try {
         const contentPath = path.join(__dirname, 'runtime-data', 'content.json');
@@ -102,6 +106,7 @@ app.get('/api/admin/verify', (req, res) => {
   }
 });
 
+// UPDATED: Admin get content (now from runtime-data)
 app.get('/api/admin/content', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   
@@ -115,6 +120,7 @@ app.get('/api/admin/content', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid token' });
     }
     
+    // CHANGED: Now reading from runtime-data instead of public
     const contentPath = path.join(__dirname, 'runtime-data', 'content.json');
     const contentData = await fs.readFile(contentPath, 'utf8');
     const content = JSON.parse(contentData);
@@ -126,6 +132,7 @@ app.get('/api/admin/content', async (req, res) => {
   }
 });
 
+// UPDATED: Admin save content (now to runtime-data)
 app.post('/api/admin/save-content', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   
@@ -139,6 +146,7 @@ app.post('/api/admin/save-content', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid token' });
     }
     
+    // CHANGED: Now saving to runtime-data instead of public
     const contentPath = path.join(__dirname, 'runtime-data', 'content.json');
     await fs.writeFile(contentPath, JSON.stringify(req.body, null, 2));
     
@@ -152,6 +160,7 @@ app.post('/api/admin/save-content', async (req, res) => {
 // Poll data routes
 app.get('/api/poll', async (req, res) => {
   try {
+    // CHANGED: Now reading from runtime-data instead of public
     const contentPath = path.join(__dirname, 'runtime-data', 'content.json');
     const contentData = await fs.readFile(contentPath, 'utf8');
     const content = JSON.parse(contentData);
@@ -270,4 +279,3 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('🔧 Admin Panel: http://localhost:' + PORT + '/admin');
   console.log('🔍 Check Railway logs for request debugging\n');
 });
-

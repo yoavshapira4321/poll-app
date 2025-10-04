@@ -2,6 +2,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Content loader started...');
     
+    // Fetch content from API (which serves from runtime-data)
     fetch('/api/content')
         .then(response => {
             if (!response.ok) {
@@ -25,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function injectContent(data) {
         try {
-            const lang = 'he'; // Default to Hebrew
+            const lang = 'he';
             const ui = data.ui[lang];
             const system = data.system;
 
