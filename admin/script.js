@@ -63,11 +63,13 @@ function logout() {
     showLoginInterface();
 }
 function showLoginInterface() {
+    document.getElementById('loginContainer').style.display = 'inline';
     document.getElementById('adminContainer').style.display = 'none';
     document.getElementById('adminPassword').value = '';
     document.getElementById('loginError').style.display = 'none';
 }
 function showAdminInterface() {
+    document.getElementById('loginContainer').style.display = 'none';
     document.getElementById('adminContainer').style.display = 'block';
 }
 function showLoginError(message) {
