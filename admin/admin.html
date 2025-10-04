@@ -122,13 +122,27 @@
             </div>
         </div>
 
-        <div class="actions-bar">
-            <div>
-                <button class="btn-success" onclick="loadContent()">🔄 Load from File</button>
-                <button class="btn-primary" onclick="saveContent()">💾 Save to File</button>
-            </div>
-            <button class="btn-primary" onclick="exportJSON()">📥 Export JSON</button>
-        </div>
+<div class="actions-bar">
+    <div class="actions-group">
+        <button class="action-btn action-btn-secondary" onclick="loadContent()">
+            <span class="btn-icon">🔄</span>
+            Load Content
+        </button>
+        <button class="action-btn action-btn-success" onclick="saveContent()">
+            <span class="btn-icon">💾</span>
+            Save Changes
+        </button>
+    </div>
+    
+    <div class="actions-divider"></div>
+    
+    <div class="actions-group">
+        <button class="action-btn action-btn-export" onclick="exportJSON()">
+            <span class="btn-icon">📥</span>
+            Export JSON
+        </button>
+    </div>
+</div>
     </div>
     <script src="script.js"></script>
 </body>
