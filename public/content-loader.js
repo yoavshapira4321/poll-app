@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Content loader started...');
     
-    // Fetch content from API (which serves from runtime-data)
+    // Fetch content from API (which serves from public)
     fetch('/api/content')
         .then(response => {
             if (!response.ok) {
